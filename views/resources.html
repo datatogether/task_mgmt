@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ .title }}</title>
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
+  <script type="text/javascript" src="/js/site.js"></script>
+</head>
+<body>
+  <div>
+    {{ if .kiwix}}
+      <div class="container">
+        <h3>Kiwix Zims:</h3>
+        <table>
+          <tbody>
+            {{ range $idx, $d := .kiwix }}
+              <tr>
+                <td>{{ $d.Project }}</td>
+                <td>{{ $d.Language }}</td>
+                <td>{{ $d.Size }}</td>
+                <td>{{ $d.Created }}</td>
+                <td>{{ $d.Md5 }}</td>
+                <td><button class="right">Update</button></td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    {{ end }}
+  </div>
+</body>
+</html>

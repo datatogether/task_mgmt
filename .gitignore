@@ -1,0 +1,5 @@
+.DS_Store
+gin-bin
+chalmers
+coverage.out
+config.*.json
