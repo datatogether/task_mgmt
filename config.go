@@ -86,7 +86,11 @@ func initConfig(mode string) (cfg *config, err error) {
 	cfg.TLS = readEnvBool("TLS", cfg.TLS)
 	cfg.PostgresDbUrl = readEnvString("POSTGRES_DB_URL", cfg.PostgresDbUrl)
 	cfg.CertbotResponse = readEnvString("CERTBOT_RESPONSE", cfg.CertbotResponse)
+	cfg.GithubRepoName = readEnvString("GITHUB_REPO_NAME", cfg.GithubRepoName)
+	cfg.GithubRepoOwner = readEnvString("GITHUB_REPO_OWNER", cfg.GithubRepoOwner)
 	cfg.PostmarkKey = readEnvString("POSTMARK_KEY", cfg.PostmarkKey)
+	cfg.UserCookieKey = readEnvString("USER_COOKIE_KEY", cfg.UserCookieKey)
+	cfg.IdentityServerUrl = readEnvString("IDENTITY_SERVER_URL", cfg.IdentityServerUrl)
 	cfg.EmailNotificationRecipients = readEnvStringSlice("EMAIL_NOTIFICATION_RECIPIENTS", cfg.EmailNotificationRecipients)
 
 	// make sure port is set
