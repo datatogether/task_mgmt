@@ -1,7 +1,8 @@
 package main
 
 import (
-	// "encoding/json"
+	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
@@ -40,59 +41,61 @@ func middleware(handler http.HandlerFunc) http.HandlerFunc {
 // authMiddleware adds http basic auth if configured
 func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		// token := r.FormValue("access_token")
-		// c, err := r.Cookie(cfg.UserCookieKey)
-		// if err != nil {
-		// 	logger.Println(err.Error())
-		// }
+		token := r.FormValue("access_token")
+		c, err := r.Cookie(cfg.UserCookieKey)
+		if err != nil {
+			logger.Println(err.Error())
+		}
 
-		// // we gots no login info, so login required
-		// if c == nil && token == "" {
-		// 	renderTemplate(w, "login.html", nil)
-		// 	return
-		// }
+		// we gots no login info, so login required
+		if c == nil && token == "" {
+			renderTemplate(w, "login.html", nil)
+			return
+		}
 
-		// req, err := http.NewRequest("GET", fmt.Sprintf("%s/session/oauth/github/repoaccess?access_token=%s&owner=%s&repo=%s", cfg.IdentityServerUrl, token, cfg.GithubRepoOwner, cfg.GithubRepoName), nil)
+		req, err := http.NewRequest("GET", fmt.Sprintf("%s/session/oauth/github/repoaccess?access_token=%s&owner=%s&repo=%s", cfg.IdentityServerUrl, token, cfg.GithubRepoOwner, cfg.GithubRepoName), nil)
 
-		// if err != nil {
-		// 	renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
-		// 	logger.Println(err.Error())
-		// 	return
-		// }
+		if err != nil {
+			renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
+			logger.Println(err.Error())
+			return
+		}
 
-		// req.AddCookie(c)
-		// res, err := http.DefaultClient.Do(req)
-		// if err != nil {
-		// 	renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
-		// 	logger.Println(err.Error())
-		// 	return
-		// }
-		// defer res.Body.Close()
+		req.AddCookie(c)
+		res, err := http.DefaultClient.Do(req)
+		if err != nil {
+			renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
+			logger.Println(err.Error())
+			return
+		}
+		defer res.Body.Close()
 
-		// data := map[string]interface{}{}
-		// if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
-		// 	renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
-		// 	return
-		// }
+		data := map[string]interface{}{}
+		if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
+			renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
+			return
+		}
 
-		// // User Needs github added to their account
-		// if res.StatusCode == http.StatusUnauthorized {
-		// 	// renderError(w, fmt.Errorf("%s", data["meta"]))
-		// 	renderTemplate(w, "login.html", nil)
-		// 	return
-		// } else if res.StatusCode != http.StatusOK {
-		// 	renderError(w, fmt.Errorf("%s", data["meta"].(map[string]interface{})["message"]))
-		// 	return
-		// }
+		// User Needs github added to their account
+		if res.StatusCode == http.StatusUnauthorized {
+			// renderError(w, fmt.Errorf("%s", data["meta"]))
+			renderTemplate(w, "login.html", nil)
+			return
+		} else if res.StatusCode != http.StatusOK {
+			renderError(w, fmt.Errorf("%s", data["meta"].(map[string]interface{})["message"]))
+			return
+		}
 
-		// perm := data["data"].(map[string]interface{})["permission"]
-		// if perm != "admin" && perm != "write" {
-		// 	renderTemplate(w, "accessDenied.html", nil)
-		// 	return
-		// }
+		perm := data["data"].(map[string]interface{})["permission"]
+		if perm != "admin" && perm != "write" {
+			renderTemplate(w, "accessDenied.html", nil)
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), "permission", perm)
 
 		// no-auth middware func
-		middleware(handler)(w, r)
+		middleware(handler)(w, r.WithContext(ctx))
 	}
 }
 

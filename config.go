@@ -37,33 +37,31 @@ type config struct {
 	// url of postgres app db
 	PostgresDbUrl string `json:"POSTGRES_DB_URL"`
 
-	// Public Key to use for signing metablocks. required.
+	// Public Key to use for signing. required.
 	PublicKey string `json:"PUBLIC_KEY"`
 
 	// TLS (HTTPS) enable support via LetsEncrypt, default false
-	// should be true in production
+	// not needed if operating behind a TLS proxy
 	TLS bool `json:"TLS"`
+	// if true, requests that have X-Forwarded-Proto: http will be redirected
+	// to their https variant, useful if operating behind a TLS proxy
+	ProxyForceHttps bool
 
+	// key for sending emails
+	PostmarkKey string `json:"POSTMARK_KEY"`
+	// list of email addresses that should get notifications
+	EmailNotificationRecipients []string `json:"EMAIL_NOTIFICATION_RECIPIENTS"`
+
+	// owner of github repo. required
 	GithubRepoOwner string `json:"GITHUB_REPO_OWNER"`
-
+	// name of github repo. required.
 	GithubRepoName string `json:"GITHUB_REPO_NAME"`
 
+	// location of identity server
 	IdentityServerUrl string `json:"IDENTITY_SERVER_URL"`
-
+	// cookie to check for user credentials to forward to identity server.
 	UserCookieKey string `json:"USER_COOKIE_KEY"`
 
-	// setting HTTP_AUTH_USERNAME & HTTP_AUTH_PASSWORD
-	// will enable basic http auth for the server. This is a single
-	// username & password that must be passed in with every request.
-	// leaving these values blank will disable http auth
-	// read from env variable: HTTP_AUTH_USERNAME
-	HttpAuthUsername string `json:"HTTP_AUTH_USERNAME"`
-	// read from env variable: HTTP_AUTH_PASSWORD
-	HttpAuthPassword string `json:"HTTP_AUTH_PASSWORD"`
-
-	// if true, requests that have X-Forwarded-Proto: http will be redirected
-	// to their https variant
-	ProxyForceHttps bool
 	// CertbotResponse is only for doing manual SSL certificate generation via LetsEncrypt.
 	CertbotResponse string `json:"CERTBOT_RESPONSE"`
 
@@ -87,10 +85,9 @@ func initConfig(mode string) (cfg *config, err error) {
 	cfg.PublicKey = readEnvString("PUBLIC_KEY", cfg.PublicKey)
 	cfg.TLS = readEnvBool("TLS", cfg.TLS)
 	cfg.PostgresDbUrl = readEnvString("POSTGRES_DB_URL", cfg.PostgresDbUrl)
-	cfg.HttpAuthUsername = readEnvString("HTTP_AUTH_USERNAME", cfg.HttpAuthUsername)
-	cfg.HttpAuthPassword = readEnvString("HTTP_AUTH_PASSWORD", cfg.HttpAuthPassword)
 	cfg.CertbotResponse = readEnvString("CERTBOT_RESPONSE", cfg.CertbotResponse)
-	// cfg.StaleDuration = readEnvInt("STALE_DURATION", cfg.StaleDuration)
+	cfg.PostmarkKey = readEnvString("POSTMARK_KEY", cfg.PostmarkKey)
+	cfg.EmailNotificationRecipients = readEnvStringSlice("EMAIL_NOTIFICATION_RECIPIENTS", cfg.EmailNotificationRecipients)
 
 	// make sure port is set
 	if cfg.Port == "" {
@@ -98,16 +95,18 @@ func initConfig(mode string) (cfg *config, err error) {
 	}
 
 	err = requireConfigStrings(map[string]string{
-		"PORT":            cfg.Port,
-		"POSTGRES_DB_URL": cfg.PostgresDbUrl,
-		// "PUBLIC_KEY":      cfg.PublicKey,
+		"PORT":                cfg.Port,
+		"POSTGRES_DB_URL":     cfg.PostgresDbUrl,
+		"GITHUB_REPO_OWNER":   cfg.GithubRepoOwner,
+		"GITHUB_REPO_NAME":    cfg.GithubRepoName,
+		"IDENTITY_SERVER_URL": cfg.IdentityServerUrl,
 	})
 
 	return
 }
 
 func packagePath(path string) string {
-	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/chalmers", path)
+	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/task-mgmt", path)
 }
 
 // readEnvString reads key from the environment, returns def if empty

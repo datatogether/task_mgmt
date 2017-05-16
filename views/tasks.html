@@ -1,0 +1,33 @@
+{{ $canWrite := .writePerm }}
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{ .title }}</title>
+  <link rel="stylesheet" type="text/css" href="/css/style.css">
+  <script type="text/javascript" src="/js/site.js"></script>
+</head>
+<body>
+  <div>
+    {{ if .tasks }}
+      <div class="container">
+        <h2>Kiwix IPFS Wikipedia Injest Tasks:</h2>
+        <p>Track Status of current injest tasks</p> 
+        {{ range $idx, $d := .tasks }}
+          <div>
+            {{ if $canWrite }}
+              {{ $url := $d.NextActionUrl }}
+              {{ $title := $d.NextActionTitle }}
+              <a href="{{ $url }}"><button class="right">{{ $title }}</button></a>
+            {{ end }}
+            <h4>{{ $d.Title }}</h4>
+            <p><b>source url:</b> {{ $d.SourceUrl }}</td>
+            <p><b>repo commit:</b> {{ $d.RepoCommit }}</p>
+            <p><b>status:</b> {{ $d.StatusString }}</p>
+            <hr />
+          </div>
+        {{ end }}
+      </div>
+    {{ end }}
+  </div>
+</body>
+</html>

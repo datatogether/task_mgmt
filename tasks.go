@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 )
 
 func ReadTasks(db sqlQueryable, orderby string, limit, offset int) ([]*Task, error) {
@@ -22,13 +23,14 @@ func GenerateAvailableTasks(db sqlQueryExecable) ([]*Task, error) {
 	tasks := []*Task{}
 	for row.Next() {
 		var (
-			repoUrl, repoCommit, sourceUrl, sourceChecksum string
+			repoUrl, repoCommit, sourceTitle, sourceUrl, sourceChecksum string
 		)
-		if err := row.Scan(&repoUrl, &repoCommit, &sourceUrl, &sourceChecksum); err != nil {
+		if err := row.Scan(&repoUrl, &repoCommit, &sourceTitle, &sourceUrl, &sourceChecksum); err != nil {
 			return nil, err
 		}
 
 		t := &Task{
+			Title:          fmt.Sprintf("injest %s to ipfs", sourceTitle),
 			RepoUrl:        repoUrl,
 			RepoCommit:     repoCommit,
 			SourceUrl:      sourceUrl,

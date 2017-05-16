@@ -27,7 +27,7 @@ func updateKiwixSources(db *sql.DB) error {
 				}
 
 				if z.Md5 != s.Checksum {
-					s.Name = z.Name()
+					s.Title = z.Title()
 					s.Checksum = z.Md5
 					s.Save(db)
 				}
@@ -61,7 +61,7 @@ type KiwixZim struct {
 	Url string
 }
 
-func (z *KiwixZim) Name() string {
+func (z *KiwixZim) Title() string {
 	return fmt.Sprintf("%s - %s", z.Project, z.Language)
 }
 

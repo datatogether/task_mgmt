@@ -1,5 +1,5 @@
 .DS_Store
 gin-bin
-chalmers
+task-mgmt
 coverage.out
 config.*.json

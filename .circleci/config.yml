@@ -1,7 +1,7 @@
 version: '2'
 jobs:
   build:
-    working_directory: /go/src/github.com/archivers-space/chalmers
+    working_directory: /go/src/github.com/archivers-space/task-mgmt
     docker:
       - image: circleci/cci-demo-go-primary:0.0.2
         environment:
@@ -54,7 +54,7 @@ jobs:
           name: Publish to Docker Hub
           command: |
             TAG=0.1.$CIRCLE_BUILD_NUM
-            docker build -t archivers/chalmers:latest -t archivers/chalmers:$TAG .
+            docker build -t archivers/task-mgmt:latest -t archivers/task-mgmt:$TAG .
             docker login -u $DOCKER_USER -p $DOCKER_PASS
-            docker push archivers/chalmers:$TAG
-            docker push archivers/chalmers:latest
+            docker push archivers/task-mgmt:$TAG
+            docker push archivers/task-mgmt:latest

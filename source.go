@@ -14,8 +14,8 @@ type Source struct {
 	Created time.Time `json:"created"`
 	// updated date rounded to secounds
 	Updated time.Time `json:"updated"`
-	// Human-readable name for source
-	Name     string
+	// Human-readable title for source
+	Title    string
 	Url      string
 	Checksum string
 	Meta     map[string]interface{}
@@ -50,12 +50,12 @@ func (s *Source) Delete(db sqlQueryExecable) error {
 
 func (s *Source) UnmarshalSQL(row sqlScannable) error {
 	var (
-		id, url, checksum, name string
-		created, updated        time.Time
-		meta                    []byte
+		id, url, checksum, title string
+		created, updated         time.Time
+		meta                     []byte
 	)
 
-	if err := row.Scan(&id, &created, &updated, &name, &url, &checksum, &meta); err != nil {
+	if err := row.Scan(&id, &created, &updated, &title, &url, &checksum, &meta); err != nil {
 		if err == sql.ErrNoRows {
 			return ErrNotFound
 		}
@@ -63,9 +63,12 @@ func (s *Source) UnmarshalSQL(row sqlScannable) error {
 	}
 
 	*s = Source{
-		Checksum: checksum,
+		Id:       id,
 		Created:  created,
+		Updated:  updated,
+		Title:    title,
 		Url:      url,
+		Checksum: checksum,
 	}
 
 	if meta != nil {
@@ -93,7 +96,7 @@ func (s *Source) sqlArgs() []interface{} {
 		s.Id,
 		s.Created,
 		s.Updated,
-		s.Name,
+		s.Title,
 		s.Url,
 		s.Checksum,
 		meta,

@@ -7,14 +7,14 @@ EXPOSE 3000
 # RUN go-wrapper install github.com/codegangsta/gin
 
 # Copy the local package files to the container’s workspace.
-ADD . /go/src/github.com/archivers-space/chalmers
-# WORKDIR /go/src/github.com/archivers-space/chalmers
+ADD . /go/src/github.com/archivers-space/task-mgmt
+# WORKDIR /go/src/github.com/archivers-space/task-mgmt
 # CMD ["gin", "-i"]
 
 # Install api binary globally within container 
-RUN go install github.com/archivers-space/chalmers
+RUN go install github.com/archivers-space/task-mgmt
 # Set binary as entrypoint
-ENTRYPOINT /go/bin/chalmers
+ENTRYPOINT /go/bin/task-mgmt
 
 
 

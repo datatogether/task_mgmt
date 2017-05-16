@@ -7,6 +7,7 @@ WITH t AS (
   SELECT
     repos.url as repo_url,
     repos.latest_commit as repo_commit,
+    sources.title as source_title,
     sources.url as source_url,
     sources.checksum as source_checksum
   FROM sources, repos, repo_sources
@@ -15,7 +16,7 @@ WITH t AS (
     repos.id = repo_sources.repo_id
 )
 SELECT
-  t.repo_url, t.repo_commit, t.source_url, t.source_checksum
+  t.repo_url, t.repo_commit, t.source_title, t.source_url, t.source_checksum
 FROM t LEFT OUTER JOIN tasks ON (t.source_url = tasks.source_url)
 WHERE
   tasks.repo_commit is null OR
@@ -23,7 +24,7 @@ WHERE
 
 const qTasksBySourceUrl = `
 SELECT
-  id, created, updated, request, success, fail, 
+  id, created, updated, title, request, success, fail, 
   repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message
 FROM tasks
 ORDER BY $1
@@ -31,49 +32,49 @@ LIMIT $2 OFFSET $3;`
 
 const qTaskReadById = `
 SELECT 
-  id, created, updated, request, success, fail, 
+  id, created, updated, title, request, success, fail, 
   repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message
 FROM tasks
 WHERE id = $1;`
 
 const qTaskInsert = `
 INSERT INTO tasks
-  (id, created, updated, request, success, fail, 
+  (id, created, updated, title, request, success, fail, 
   repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message)
 VALUES
-  ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`
+  ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);`
 
 const qTaskUpdate = `
 UPDATE tasks SET
-  created = $2, updated = $3, request = $4, success = $5, fail = $6, 
-  repo_url = $7, repo_commit = $8, source_url = $9, source_checksum = $10, result_url = $11, result_hash = $12, message = $13
+  created = $2, updated = $3, title = $4, request = $5, success = $6, fail = $7, 
+  repo_url = $8, repo_commit = $9, source_url = $10, source_checksum = $11, result_url = $12, result_hash = $13, message = $14
 WHERE id = $1;`
 
 const qTaskDelete = `DELETE FROM tasks WHERE id = $1;`
 
 const qSourcesBySourceUrl = `
 SELECT
-  id, created, updated, name, url, checksum, meta
+  id, created, updated, title, url, checksum, meta
 FROM sources
 ORDER BY $1
 LIMIT $2 OFFSET $3;`
 
 const qSourceReadById = `
 SELECT 
-  id, created, updated, name, url, checksum, meta
+  id, created, updated, title, url, checksum, meta
 FROM sources
 WHERE 
   id = $1;`
 
 const qSourceInsert = `
 INSERT INTO sources
-  (id, created, updated, name, url, checksum, meta)
+  (id, created, updated, title, url, checksum, meta)
 VALUES
   ($1, $2, $3, $4, $5, $6, $7);`
 
 const qSourceUpdate = `
 UPDATE sources SET
-  created = $2, updated = $3, name = $4, url = $5, checksum = $6, meta = $7
+  created = $2, updated = $3, title = $4, url = $5, checksum = $6, meta = $7
 WHERE id = $1;`
 
 const qSourceDelete = `DELETE FROM sources WHERE id = $1;`

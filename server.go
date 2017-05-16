@@ -38,12 +38,16 @@ func main() {
 	}
 
 	connectToAppDb()
-	update(appDB)
+	go update(appDB)
 
 	s := &http.Server{}
 	m := http.NewServeMux()
 	m.HandleFunc("/.well-known/acme-challenge/", CertbotHandler)
 	m.Handle("/", authMiddleware(HomeHandler))
+	m.Handle("/tasks/run/", authMiddleware(RunTaskHandler))
+	m.Handle("/tasks/cancel/", authMiddleware(CancelTaskHandler))
+	m.Handle("/tasks/success/", authMiddleware(TaskSuccessHandler))
+	m.Handle("/tasks/fail/", authMiddleware(TaskFailHandler))
 
 	m.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
 	m.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))

@@ -2,6 +2,7 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"github.com/pborman/uuid"
 	"time"
 )
@@ -14,6 +15,8 @@ type Task struct {
 	Created time.Time `json:"created"`
 	// updated date rounded to secounds
 	Updated time.Time `json:"updated"`
+	// human-readable title for the task
+	Title string `json:"name"`
 	// timstamp for when request was submitted for completion
 	// nil if request hasn't been sent
 	Request *time.Time `json:"request"`
@@ -40,9 +43,66 @@ type Task struct {
 	Message string `json:"message"`
 }
 
-func (t *Task) Requested(db *sql.DB) error {
+func (t *Task) StatusString() string {
+	if t.Request == nil {
+		return "ready"
+	} else if t.Success != nil {
+		return "finished"
+	} else if t.Fail != nil {
+		return "failed"
+	} else {
+		return "running"
+	}
+}
+
+func (t *Task) NextActionUrl() (url string, err error) {
+	switch t.StatusString() {
+	case "ready":
+		return fmt.Sprintf("/tasks/run/%s", t.Id), nil
+	case "running":
+		return fmt.Sprintf("/tasks/cancel/%s", t.Id), nil
+	case "failed":
+		return fmt.Sprintf("/tasks/run/%s", t.Id), nil
+	default:
+		return "", fmt.Errorf("no next action")
+	}
+}
+
+func (t *Task) NextActionTitle() (title string, err error) {
+	switch t.StatusString() {
+	case "ready":
+		return "run", nil
+	case "running":
+		return "cancel", nil
+	case "failed":
+		return "re-run", nil
+	default:
+		return "", fmt.Errorf("no next action")
+	}
+}
+
+func (t *Task) Run(db *sql.DB) error {
 	now := time.Now()
 	t.Request = &now
+	t.Fail = nil
+	t.Success = nil
+
+	if err := SendTaskRequestEmail(t); err != nil {
+		return err
+	}
+	return t.Save(db)
+}
+
+func (t *Task) Cancel(db *sql.DB) error {
+	now := time.Now()
+	t.Fail = &now
+	t.Success = nil
+	t.Message = "Task Cancelled"
+
+	if err := SendTaskCancelEmail(t); err != nil {
+		return err
+	}
+
 	return t.Save(db)
 }
 
@@ -94,12 +154,12 @@ func (t *Task) Delete(db sqlQueryExecable) error {
 
 func (t *Task) UnmarshalSQL(row sqlScannable) error {
 	var (
-		id, repoUrl, repoCommit, source, sourceChecksum, message, result, resultHash string
-		created, updated                                                             time.Time
-		request, success, fail                                                       *time.Time
+		id, title, repoUrl, repoCommit, source, sourceChecksum, message, result, resultHash string
+		created, updated                                                                    time.Time
+		request, success, fail                                                              *time.Time
 	)
 	err := row.Scan(
-		&id, &created, &updated, &request, &success, &fail,
+		&id, &created, &updated, &title, &request, &success, &fail,
 		&repoUrl, &repoCommit, &source, &sourceChecksum, &result, &resultHash, &message,
 	)
 	if err == sql.ErrNoRows {
@@ -110,6 +170,7 @@ func (t *Task) UnmarshalSQL(row sqlScannable) error {
 		Id:             id,
 		Created:        created,
 		Updated:        updated,
+		Title:          title,
 		Request:        request,
 		Success:        success,
 		Fail:           fail,
@@ -129,6 +190,7 @@ func (t *Task) sqlArgs() []interface{} {
 		t.Id,
 		t.Created,
 		t.Updated,
+		t.Title,
 		t.Request,
 		t.Success,
 		t.Fail,

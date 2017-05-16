@@ -6,6 +6,7 @@ CREATE TABLE tasks (
   id               UUID NOT NULL PRIMARY KEY,
   created          timestamp NOT NULL DEFAULT (now() at time zone 'utc'),
   updated          timestamp NOT NULL DEFAULT (now() at time zone 'utc'),
+  title            text NOT NULL DEFAULT '',
   request          timestamp,
   success          timestamp,
   fail             timestamp,
