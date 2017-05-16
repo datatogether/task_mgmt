@@ -24,6 +24,7 @@ CREATE TABLE sources (
   id               UUID NOT NULL PRIMARY KEY,
   created          timestamp NOT NULL DEFAULT (now() at time zone 'utc'), 
   updated          timestamp NOT NULL DEFAULT (now() at time zone 'utc'), 
+  title            text NOT NULL DEFAULT '',
   url              text NOT NULL,
   checksum         text NOT NULL DEFAULT '', 
   meta             json
