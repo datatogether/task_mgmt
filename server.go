@@ -38,6 +38,7 @@ func main() {
 	}
 
 	connectToAppDb()
+	update(appDB)
 
 	s := &http.Server{}
 	m := http.NewServeMux()

@@ -5,7 +5,7 @@ import (
 )
 
 func ReadSources(db sqlQueryable, orderby string, limit, offset int) ([]*Source, error) {
-	rows, err := db.Query(qSourcesBySourceUrl, "created DESC", limit, offset)
+	rows, err := db.Query(qSourcesBySourceUrl, orderby, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -18,10 +18,12 @@ func unmarshalSources(rows *sql.Rows, limit int) ([]*Source, error) {
 	sources := make([]*Source, limit)
 	i := 0
 	for rows.Next() {
-		t := &Source{}
-		if err := t.UnmarshalSQL(rows); err != nil {
+		s := &Source{}
+		if err := s.UnmarshalSQL(rows); err != nil {
 			return nil, err
 		}
+
+		sources[i] = s
 		i++
 	}
 

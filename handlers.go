@@ -48,8 +48,14 @@ func reqParamBool(key string, r *http.Request) (bool, error) {
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
+	tasks, err := ReadTasks(appDB, "created DESC", 30, 0)
+	if err != nil {
+		renderError(w, err)
+		return
+	}
+
 	renderTemplate(w, "resources.html", map[string]interface{}{
-		"kiwix": zims,
+		"tasks": tasks,
 	})
 }
 

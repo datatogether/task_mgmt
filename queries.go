@@ -1,5 +1,7 @@
 package main
 
+// an available task a source.Checksum && repo.LatestCommit combination that doesn't
+// have a task model already created.
 const qAvailableTasks = `
 WITH t AS (
   SELECT
@@ -22,7 +24,7 @@ WHERE
 const qTasksBySourceUrl = `
 SELECT
   id, created, updated, request, success, fail, 
-  code_url, code_commit, source_url, source_checksum, result_url, result_hash, message
+  repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message
 FROM tasks
 ORDER BY $1
 LIMIT $2 OFFSET $3;`
@@ -30,21 +32,21 @@ LIMIT $2 OFFSET $3;`
 const qTaskReadById = `
 SELECT 
   id, created, updated, request, success, fail, 
-  code_url, code_commit, source_url, source_checksum, result_url, result_hash, message
+  repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message
 FROM tasks
 WHERE id = $1;`
 
 const qTaskInsert = `
 INSERT INTO tasks
   (id, created, updated, request, success, fail, 
-  code_url, code_commit, source_url, source_checksum, result_url, result_hash, message)
+  repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message)
 VALUES
   ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`
 
 const qTaskUpdate = `
 UPDATE tasks SET
   created = $2, updated = $3, request = $4, success = $5, fail = $6, 
-  code_url = $7, code_commit = $8, source_url = $9, source_checksum = $10, result_url = $11, result_hash = $12, message = $13
+  repo_url = $7, repo_commit = $8, source_url = $9, source_checksum = $10, result_url = $11, result_hash = $12, message = $13
 WHERE id = $1;`
 
 const qTaskDelete = `DELETE FROM tasks WHERE id = $1;`
@@ -76,7 +78,7 @@ WHERE id = $1;`
 
 const qSourceDelete = `DELETE FROM sources WHERE id = $1;`
 
-const qReposBySourceUrl = `
+const qRepos = `
 SELECT
   id, created, updated, url, branch, latest_commit
 FROM repos

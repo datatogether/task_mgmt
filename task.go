@@ -62,6 +62,9 @@ func (t *Task) Succeeded(db *sql.DB, url, hash string) error {
 }
 
 func (t *Task) Read(db sqlQueryable) error {
+	if t.Id == "" {
+		return ErrNotFound
+	}
 	return t.UnmarshalSQL(db.QueryRow(qTaskReadById, t.Id))
 }
 

@@ -98,8 +98,8 @@ func initConfig(mode string) (cfg *config, err error) {
 	}
 
 	err = requireConfigStrings(map[string]string{
-		"PORT": cfg.Port,
-		// "POSTGRES_DB_URL": cfg.PostgresDbUrl,
+		"PORT":            cfg.Port,
+		"POSTGRES_DB_URL": cfg.PostgresDbUrl,
 		// "PUBLIC_KEY":      cfg.PublicKey,
 	})
 
@@ -107,7 +107,7 @@ func initConfig(mode string) (cfg *config, err error) {
 }
 
 func packagePath(path string) string {
-	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/exec-que", path)
+	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/chalmers", path)
 }
 
 // readEnvString reads key from the environment, returns def if empty

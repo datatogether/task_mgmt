@@ -13,7 +13,8 @@ type Source struct {
 	// created date rounded to secounds
 	Created time.Time `json:"created"`
 	// updated date rounded to secounds
-	Updated  time.Time `json:"updated"`
+	Updated time.Time `json:"updated"`
+	// Human-readable name for source
 	Name     string
 	Url      string
 	Checksum string

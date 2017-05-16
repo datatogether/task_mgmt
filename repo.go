@@ -2,11 +2,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
+	"fmt"
 	"github.com/pborman/uuid"
+	"net/http"
+	"net/url"
+	"strings"
 	"time"
 )
 
-// a Repo represents a code repository that can be applied to sources
+// a Repo represents a github repository that can be applied to sources
 type Repo struct {
 	// uuid identifier for task
 	Id string `json:"id"`
@@ -23,6 +28,58 @@ type Repo struct {
 	// version control commit to execute code from
 	// currently should only look at the master branch
 	LatestCommit string `json:"codeCommit"`
+}
+
+func (r *Repo) Owner() string {
+	url, err := url.Parse(r.Url)
+	if err != nil {
+		return ""
+	}
+	spl := strings.Split(url.Path, "/")
+	if len(spl) >= 1 {
+		return spl[1]
+	}
+
+	return ""
+}
+
+func (r *Repo) Repo() string {
+	url, err := url.Parse(r.Url)
+	if err != nil {
+		return ""
+	}
+	spl := strings.Split(url.Path, "/")
+	if len(spl) >= 2 {
+		return spl[2]
+	}
+
+	return ""
+}
+
+func (r *Repo) FetchLatestCommit() (string, error) {
+	u := fmt.Sprintf("http://api.github.com/repos/%s/%s/branches/%s", r.Owner(), r.Repo(), r.Branch)
+	res, err := http.Get(u)
+	if err != nil {
+		return "", err
+	}
+	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("invalid Github API response code while fetching latest commit: %d. url: %s", res.StatusCode, u)
+	}
+
+	body := map[string]interface{}{}
+	if err := json.NewDecoder(res.Body).Decode(&body); err != nil {
+		return "", err
+	}
+
+	if commit, ok := body["commit"].(map[string]interface{}); ok {
+		if commitSha, ok := commit["sha"].(string); ok {
+			return commitSha, nil
+		}
+	}
+
+	return "", fmt.Errorf("malformed github response: %s", body)
 }
 
 func (r *Repo) Read(db sqlQueryable) error {
