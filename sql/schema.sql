@@ -41,6 +41,6 @@ CREATE TABLE repos (
 
 -- name: create-repo_sources
 CREATE TABLE repo_sources (
-  repo_id          UUID NOT NULL references repos(id)
-  source_id        UUID NOT NULL references sources(id),
+  repo_id          UUID NOT NULL references repos(id),
+  source_id        UUID NOT NULL references sources(id)
 );

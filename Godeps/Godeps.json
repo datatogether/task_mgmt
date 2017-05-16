@@ -1,5 +1,5 @@
 {
-	"ImportPath": "github.com/archivers-space/chalmers",
+	"ImportPath": "github.com/archivers-space/task-mgmt",
 	"GoVersion": "go1.8",
 	"GodepVersion": "v79",
 	"Deps": [
