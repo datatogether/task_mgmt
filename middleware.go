@@ -49,7 +49,9 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 
 		// we gots no login info, so login required
 		if c == nil && token == "" {
-			renderTemplate(w, "login.html", nil)
+			renderTemplate(w, "login.html", map[string]interface{}{
+				"github_login_url": fmt.Sprintf("%s/oauth/github", cfg.IdentityServerUrl),
+			})
 			return
 		}
 
