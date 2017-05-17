@@ -83,6 +83,9 @@ func (r *Repo) FetchLatestCommit() (string, error) {
 }
 
 func (r *Repo) Read(db sqlQueryable) error {
+	if r.Id == "" {
+		return ErrNotFound
+	}
 	return r.UnmarshalSQL(db.QueryRow(qRepoReadById, r.Id))
 }
 
@@ -90,14 +93,14 @@ func (r *Repo) Save(db sqlQueryExecable) error {
 	prev := &Repo{Id: r.Id}
 	if err := prev.Read(db); err == ErrNotFound {
 		r.Id = uuid.New()
-		r.Created = time.Now().Round(time.Second).In(time.UTC)
+		r.Created = time.Now().Round(time.Millisecond).In(time.UTC)
 		r.Updated = r.Created
 		_, err := db.Exec(qRepoInsert, r.sqlArgs()...)
 		return err
 	} else if err != nil {
 		return err
 	} else {
-		r.Updated = time.Now().Round(time.Second).In(time.UTC)
+		r.Updated = time.Now().Round(time.Millisecond).In(time.UTC)
 		_, err := db.Exec(qRepoUpdate, r.sqlArgs()...)
 		return err
 	}
@@ -117,8 +120,11 @@ func (t *Repo) UnmarshalSQL(row sqlScannable) error {
 	)
 
 	err := row.Scan(&id, &created, &updated, &url, &branch, &commit)
-	if err == sql.ErrNoRows {
-		return ErrNotFound
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrNotFound
+		}
+		return err
 	}
 
 	*t = Repo{

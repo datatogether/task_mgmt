@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+// SendTaskRequestEmail sends an email to cfg.EmailNotificationRecipients
+// with details for a newly requested task
 func SendTaskRequestEmail(t *Task) error {
 	if len(cfg.EmailNotificationRecipients) == 0 {
 		return fmt.Errorf("no recipients are set to send email to")
@@ -31,6 +33,8 @@ func SendTaskRequestEmail(t *Task) error {
 	return sendEmail(strings.NewReader(body))
 }
 
+// SendTaskRequestEmail sends an email to cfg.EmailNotificationRecipients
+// notifying them of a cancelled request
 func SendTaskCancelEmail(t *Task) error {
 	if len(cfg.EmailNotificationRecipients) == 0 {
 		return fmt.Errorf("no recipients are set to send email to")
@@ -81,32 +85,3 @@ func sendEmail(jsonBody io.Reader) error {
 
 	return err
 }
-
-// send an email with a server-side template
-// func sendTemplateEmail(jsonBody io.Reader) error {
-//   url := "https://api.postmarkapp.com/email/withTemplate/"
-
-//   req, err := http.NewRequest("POST", url, jsonBody)
-//   if err != nil {
-//     return New500Error(err.Error())
-//   }
-//   req.Header.Add("X-Postmark-Server-Token", config.PostmarkKey)
-//   req.Header.Add("Accept", "application/json")
-//   req.Header.Add("Content-Type", "application/json")
-//   req.Body = ioutil.NopCloser(jsonBody)
-
-//   res, err := http.DefaultClient.Do(req)
-//   if err != nil {
-//     return err
-//   }
-//   defer res.Body.Close()
-
-//   // if the server responds with an error, process & log
-//   if res.StatusCode == 422 {
-//     responseBody := map[string]interface{}{}
-//     json.NewDecoder(res.Body).Decode(&responseBody)
-//     logger.Println(responseBody)
-//   }
-
-//   return Error500IfErr(err)
-// }

@@ -118,6 +118,7 @@ func (t *Task) Succeeded(db *sql.DB, url, hash string) error {
 	t.Success = &now
 	t.ResultUrl = url
 	t.ResultHash = hash
+	t.Message = ""
 	return t.Save(db)
 }
 

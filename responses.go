@@ -15,24 +15,6 @@ func writeResponse(w http.ResponseWriter, data interface{}) error {
 	return jsonResponse(w, env)
 }
 
-func writePageResponse(w http.ResponseWriter, data interface{}, r *http.Request, p Page) error {
-	env := map[string]interface{}{
-		"meta": map[string]interface{}{
-			"code": http.StatusOK,
-		},
-		"data": data,
-		"pagination": map[string]interface{}{
-			"nextUrl": nextPageUrl(r, p),
-		},
-	}
-	return jsonResponse(w, env)
-}
-
-// TODO
-func nextPageUrl(r *http.Request, p Page) string {
-	return r.URL.String()
-}
-
 func writeMessageResponse(w http.ResponseWriter, message string, data interface{}) error {
 	env := map[string]interface{}{
 		"meta": map[string]interface{}{

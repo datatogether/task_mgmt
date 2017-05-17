@@ -100,7 +100,7 @@ VALUES
 
 const qRepoUpdate = `
 UPDATE repos SET
-  created = $2, updated = $3, owner = $4, name = $5, branch = $6, latest_commit = $7
+  created = $2, updated = $3, url = $4, branch = $5, latest_commit = $6
 WHERE id = $1;`
 
 const qRepoDelete = `DELETE FROM repos WHERE id = $1;`

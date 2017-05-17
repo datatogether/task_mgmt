@@ -9,16 +9,20 @@ import (
 
 // Source is an http origin of data
 type Source struct {
-	Id string
+	// version 4 uuid
+	Id string `json:"id"`
 	// created date rounded to secounds
 	Created time.Time `json:"created"`
 	// updated date rounded to secounds
 	Updated time.Time `json:"updated"`
 	// Human-readable title for source
-	Title    string
-	Url      string
-	Checksum string
-	Meta     map[string]interface{}
+	Title string `json:"title"`
+	// Url to source data
+	Url string `json:"url"`
+	// Checksum of url
+	Checksum string `json:"checksum"`
+	// any associated metadata
+	Meta map[string]interface{} `json:"meta"`
 }
 
 func (s *Source) Read(db sqlQueryable) error {
@@ -29,14 +33,14 @@ func (s *Source) Save(db sqlQueryExecable) error {
 	prev := &Source{Id: s.Id}
 	if err := prev.Read(db); err != ErrNotFound {
 		s.Id = uuid.New()
-		s.Created = time.Now().In(time.UTC)
+		s.Created = time.Now().In(time.UTC).Round(time.Millisecond)
 		s.Updated = s.Created
 		_, err := db.Exec(qSourceInsert, s.sqlArgs()...)
 		return err
 	} else if err != nil {
 		return err
 	} else {
-		s.Updated = time.Now().In(time.UTC)
+		s.Updated = time.Now().In(time.UTC).Round(time.Millisecond)
 		_, err := db.Exec(qSourceUpdate, s.sqlArgs()...)
 		return err
 	}
