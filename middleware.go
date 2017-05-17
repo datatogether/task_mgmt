@@ -2,11 +2,21 @@ package main
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"time"
 )
+
+func init() {
+	cfg := &tls.Config{
+		InsecureSkipVerify: true,
+	}
+	http.DefaultClient.Transport = &http.Transport{
+		TLSClientConfig: cfg,
+	}
+}
 
 // middleware handles request logging
 func middleware(handler http.HandlerFunc) http.HandlerFunc {
