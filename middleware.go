@@ -44,13 +44,13 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 		token := r.FormValue("access_token")
 		c, err := r.Cookie(cfg.UserCookieKey)
 		if err != nil {
-			logger.Println(err.Error())
+			// logger.Println(err.Error())
 		}
 
 		// we gots no login info, so login required
 		if c == nil && token == "" {
 			renderTemplate(w, "login.html", map[string]interface{}{
-				"github_login_url": fmt.Sprintf("%s/oauth/github", cfg.IdentityServerUrl),
+				"github_login_url": fmt.Sprintf("%s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot),
 			})
 			return
 		}
@@ -82,7 +82,7 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 		if res.StatusCode == http.StatusUnauthorized {
 			// renderError(w, fmt.Errorf("%s", data["meta"]))
 			renderTemplate(w, "login.html", map[string]interface{}{
-				"github_login_url": fmt.Sprintf("%s/oauth/github", cfg.IdentityServerUrl),
+				"github_login_url": fmt.Sprintf("%s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot),
 			})
 			return
 		} else if res.StatusCode != http.StatusOK {
