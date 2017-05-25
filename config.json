@@ -1,7 +1,0 @@
-{
-	"ProxyForceHttps" : true,
-  "templateData" : {
-    "title" : "ipfs wikipedia",
-    "github_login_url" : "http://localhost:3100/oauth/github"
-  }
-}

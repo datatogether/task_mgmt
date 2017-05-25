@@ -25,8 +25,8 @@ var templates = template.Must(template.ParseFiles(
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	if data == nil {
 		data = map[string]string{
-			"title":            cfg.Title,
-			"github_login_url": cfg.GithubLoginUrl,
+			"title":          cfg.Title,
+			"GithubLoginUrl": cfg.GithubLoginUrl,
 		}
 	}
 	err := templates.ExecuteTemplate(w, tmpl, data)
