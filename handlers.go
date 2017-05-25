@@ -24,7 +24,10 @@ var templates = template.Must(template.ParseFiles(
 // renderTemplate renders a template with the values of cfg.TemplateData
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	if data == nil {
-		data = cfg.TemplateData
+		data = map[string]string{
+			"title":            cfg.Title,
+			"github_login_url": cfg.GithubLoginUrl,
+		}
 	}
 	err := templates.ExecuteTemplate(w, tmpl, data)
 	if err != nil {
@@ -90,7 +93,7 @@ func RunTaskHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderMessage(w, "Now Running Task", "We've shipped your task of for execution, check back here in 12-24 hours to see status!")
+	renderMessage(w, "Now Running Task", "We've shipped your task off for execution, check back here in 12-24 hours to see status!")
 }
 
 func CancelTaskHandler(w http.ResponseWriter, r *http.Request) {

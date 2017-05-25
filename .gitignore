@@ -3,3 +3,4 @@ gin-bin
 task-mgmt
 coverage.out
 config.*.json
+*.env
