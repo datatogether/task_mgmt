@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"html/template"
 	"io"
 	"net/http"
@@ -31,7 +30,7 @@ func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	}
 	err := templates.ExecuteTemplate(w, tmpl, data)
 	if err != nil {
-		fmt.Println(err.Error())
+		log.Info(err.Error())
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }

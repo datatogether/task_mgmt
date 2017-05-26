@@ -3,8 +3,6 @@ package main
 
 import (
 	"database/sql"
-	"fmt"
-
 	_ "github.com/lib/pq"
 )
 
@@ -32,7 +30,7 @@ func connectToAppDb() {
 	var err error
 	appDB, err = SetupConnection(cfg.PostgresDbUrl)
 	if err != nil {
-		fmt.Println(err)
+		log.Info(err)
 	}
 }
 

@@ -31,12 +31,12 @@ func update(db *sql.DB) {
 	t := 2
 	done := make(chan (bool), 0)
 
-	logger.Println("updating:", lastUpdate)
+	log.Info("updating:", lastUpdate)
 
 	// Spin off a sources update
 	go func() {
 		if err := updateKiwixSources(appDB); err != nil {
-			logger.Println(err.Error())
+			log.Info(err.Error())
 		}
 		done <- true
 	}()
@@ -44,7 +44,7 @@ func update(db *sql.DB) {
 	// Spin off a repos update
 	go func() {
 		if err := updateRepos(appDB); err != nil {
-			logger.Println(err.Error())
+			log.Info(err.Error())
 		}
 		done <- true
 	}()
@@ -56,10 +56,10 @@ func update(db *sql.DB) {
 
 	tasks, err := GenerateAvailableTasks(db)
 	if err != nil {
-		logger.Println(err.Error())
+		log.Info(err.Error())
 	}
 
-	logger.Printf("generated %d tasks", len(tasks))
+	log.Infof("generated %d tasks", len(tasks))
 }
 
 func updateRepos(db *sql.DB) error {

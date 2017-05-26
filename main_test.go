@@ -65,7 +65,7 @@ func initializeAppSchema(db *sql.DB) (func(), error) {
 		"create-repo_sources",
 	} {
 		if _, err := schema.Exec(db, cmd); err != nil {
-			logger.Println(cmd, "error:", err)
+			log.Info(cmd, "error:", err)
 			return nil, err
 		}
 	}
@@ -88,12 +88,12 @@ func resetTestData(db *sql.DB, tables ...string) error {
 	}
 	for _, t := range tables {
 		if _, err := schema.Exec(db, fmt.Sprintf("delete-%s", t)); err != nil {
-			logger.Println("error deleting test data:", t)
-			logger.Println(err.Error())
+			log.Info("error deleting test data:", t)
+			log.Info(err.Error())
 			return err
 		}
 		if _, err := schema.Exec(db, fmt.Sprintf("insert-%s", t)); err != nil {
-			logger.Println("error inserting test data:", t)
+			log.Info("error inserting test data:", t)
 			return err
 		}
 	}

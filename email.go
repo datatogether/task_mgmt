@@ -80,7 +80,7 @@ func sendEmail(jsonBody io.Reader) error {
 	if res.StatusCode == 422 {
 		responseBody := map[string]interface{}{}
 		json.NewDecoder(res.Body).Decode(&responseBody)
-		logger.Println(responseBody)
+		log.Info(responseBody)
 	}
 
 	return err

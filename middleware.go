@@ -23,7 +23,7 @@ func middleware(handler http.HandlerFunc) http.HandlerFunc {
 	// no-auth middware func
 	return func(w http.ResponseWriter, r *http.Request) {
 		// poor man's logging:
-		fmt.Println(r.Method, r.URL.Path, time.Now())
+		log.Info(r.Method, r.URL.Path, time.Now())
 
 		// If this server is operating behind a proxy, but we still want to force
 		// users to use https, cfg.ProxyForceHttps == true will listen for the common
@@ -54,7 +54,7 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 		token := r.FormValue("access_token")
 		c, err := r.Cookie(cfg.UserCookieKey)
 		if err != nil {
-			// logger.Println(err.Error())
+			// log.Info(err.Error())
 		}
 
 		// we gots no login info, so login required
@@ -69,7 +69,7 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 
 		if err != nil {
 			renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
-			logger.Println(err.Error())
+			log.Info(err.Error())
 			return
 		}
 
@@ -77,7 +77,7 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 		res, err := http.DefaultClient.Do(req)
 		if err != nil {
 			renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
-			logger.Println(err.Error())
+			log.Info(err.Error())
 			return
 		}
 		defer res.Body.Close()

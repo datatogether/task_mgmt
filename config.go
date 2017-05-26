@@ -72,9 +72,8 @@ type config struct {
 func initConfig(mode string) (cfg *config, err error) {
 	cfg = &config{}
 
-	path := configFilePath(mode, cfg)
-	if path != "" {
-		logger.Printf("loading config file: %s", filepath.Base(path))
+	if path := configFilePath(mode, cfg); path != "" {
+		log.Infof("loading config file: %s", filepath.Base(path))
 		conf.Load(cfg, path)
 	} else {
 		conf.Load(cfg)
