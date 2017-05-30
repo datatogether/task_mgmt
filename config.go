@@ -78,7 +78,7 @@ func initConfig(mode string) (cfg *config, err error) {
 			log.Info("error loading config:", err)
 		}
 	} else {
-		if err := conf.Load(cfg, path); err != nil {
+		if err := conf.Load(cfg); err != nil {
 			log.Info("error loading config:", err)
 		}
 	}
