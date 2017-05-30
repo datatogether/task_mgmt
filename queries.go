@@ -22,7 +22,7 @@ WHERE
   tasks.repo_commit is null OR
   tasks.source_checksum is null;`
 
-const qTasksBySourceUrl = `
+const qTasks = `
 SELECT
   id, created, updated, title, request, success, fail, 
   repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message

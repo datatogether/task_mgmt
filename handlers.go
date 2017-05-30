@@ -60,6 +60,7 @@ func reqParamBool(key string, r *http.Request) (bool, error) {
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
 	tasks, err := ReadTasks(appDB, "created DESC", 30, 0)
 	if err != nil {
+		log.Info(err.Error())
 		renderError(w, err)
 		return
 	}

@@ -90,7 +90,6 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 
 		// User Needs github added to their account
 		if res.StatusCode == http.StatusUnauthorized {
-			// renderError(w, fmt.Errorf("%s", data["meta"]))
 			renderTemplate(w, "login.html", map[string]interface{}{
 				"GithubLoginUrl": fmt.Sprintf("%s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot),
 			})

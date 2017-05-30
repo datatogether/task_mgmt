@@ -6,7 +6,7 @@ import (
 )
 
 func ReadTasks(db sqlQueryable, orderby string, limit, offset int) ([]*Task, error) {
-	rows, err := db.Query(qTasksBySourceUrl, orderby, limit, offset)
+	rows, err := db.Query(qTasks, orderby, limit, offset)
 	if err != nil {
 		return nil, err
 	}
@@ -54,6 +54,7 @@ func unmarshalTasks(rows *sql.Rows, limit int) ([]*Task, error) {
 	for rows.Next() {
 		t := &Task{}
 		if err := t.UnmarshalSQL(rows); err != nil {
+			log.Info(err.Error())
 			return nil, err
 		}
 		tasks[i] = t
