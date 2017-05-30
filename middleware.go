@@ -84,6 +84,7 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 
 		data := map[string]interface{}{}
 		if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
+			log.Info(err.Error())
 			renderError(w, fmt.Errorf("error contacting identity server: %s", err.Error()))
 			return
 		}
@@ -95,6 +96,7 @@ func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
 			})
 			return
 		} else if res.StatusCode != http.StatusOK {
+			log.Info(data["meta"].(map[string]interface{})["message"])
 			renderError(w, fmt.Errorf("%s", data["meta"].(map[string]interface{})["message"]))
 			return
 		}
