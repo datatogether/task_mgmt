@@ -46,7 +46,12 @@ func main() {
 	}
 
 	connectToAppDb()
-	go update(appDB)
+	// go update(appDB)
+
+	stop, err := acceptTasks()
+	if err != nil {
+		panic(err.Error())
+	}
 
 	s := &http.Server{}
 	// connect mux to server
@@ -61,6 +66,9 @@ func main() {
 	// start server wrapped in a log.Fatal b/c http.ListenAndServe will not
 	// return unless there's an error
 	log.Fatal(StartServer(cfg, s))
+
+	// lol will never happen
+	stop <- true
 }
 
 // NewServerRoutes returns a Muxer that has all API routes.
@@ -73,6 +81,7 @@ func NewServerRoutes() *http.ServeMux {
 	m.Handle("/tasks/cancel/", authMiddleware(CancelTaskHandler))
 	m.Handle("/tasks/success/", authMiddleware(TaskSuccessHandler))
 	m.Handle("/tasks/fail/", authMiddleware(TaskFailHandler))
+	m.HandleFunc("/ipfs/add", ipfsAdd)
 
 	m.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
 	m.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))

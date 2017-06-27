@@ -40,6 +40,9 @@ type config struct {
 	// url of message que server
 	AmqpUrl string
 
+	// url for IPFS api methods
+	IpfsApiUrl string
+
 	// Public Key to use for signing. required.
 	PublicKey string
 
@@ -103,7 +106,7 @@ func initConfig(mode string) (cfg *config, err error) {
 }
 
 func packagePath(path string) string {
-	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/task-mgmt", path)
+	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/tasks", path)
 }
 
 // requireConfigStrings panics if any of the passed in values aren't set

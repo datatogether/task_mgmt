@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+	"github.com/streadway/amqp"
 	"html/template"
 	"io"
 	"net/http"
@@ -19,6 +21,49 @@ var templates = template.Must(template.ParseFiles(
 	"views/tasks.html",
 	"views/message.html",
 ))
+
+func ipfsAdd(w http.ResponseWriter, r *http.Request) {
+	conn, err := amqp.Dial(cfg.AmqpUrl)
+	if err != nil {
+		renderError(w, fmt.Errorf("Failed to connect to RabbitMQ: %s", err.Error()))
+		return
+	}
+	defer conn.Close()
+
+	ch, err := conn.Channel()
+	if err != nil {
+		renderError(w, fmt.Errorf("Failed to connect to open channel: %s", err.Error()))
+		return
+	}
+	defer ch.Close()
+
+	q, err := ch.QueueDeclare(
+		"hello", // name
+		false,   // durable
+		false,   // delete when unused
+		false,   // exclusive
+		false,   // no-wait
+		nil,     // arguments
+	)
+	if err != nil {
+		renderError(w, fmt.Errorf("Failed to declare a queue: %s", err.Error()))
+		return
+	}
+
+	body := "hello"
+	err = ch.Publish(
+		"",     // exchange
+		q.Name, // routing key
+		false,  // mandatory
+		false,  // immediate
+		amqp.Publishing{
+			ContentType: "text/plain",
+			Body:        []byte(body),
+		})
+	log.Printf(" [x] Sent %s", body)
+	// failOnError(err, "Failed to publish a message")
+	renderMessage(w, "dope", "message sent")
+}
 
 // renderTemplate renders a template with the values of cfg.TemplateData
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
