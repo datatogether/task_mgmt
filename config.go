@@ -37,6 +37,9 @@ type config struct {
 	// url of postgres app db
 	PostgresDbUrl string
 
+	// url of message que server
+	AmqpUrl string
+
 	// Public Key to use for signing. required.
 	PublicKey string
 

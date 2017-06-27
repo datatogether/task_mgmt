@@ -30,16 +30,16 @@ func setupTestDatabase() func() {
 	appDB, err = SetupConnection(cfg.PostgresDbUrl)
 	if err != nil {
 		appDB.Close()
-		logger.Panicln(err)
+		log.Panicln(err)
 	}
 
 	teardown, err := initializeAppSchema(appDB)
 	if err != nil {
-		logger.Panicln(err.Error())
+		log.Panicln(err.Error())
 	}
 
 	if err := resetTestData(appDB, "repos", "sources", "repo_sources", "tasks"); err != nil {
-		logger.Panicln(err.Error())
+		log.Panicln(err.Error())
 	}
 
 	return teardown
@@ -72,7 +72,7 @@ func initializeAppSchema(db *sql.DB) (func(), error) {
 
 	teardown := func() {
 		if _, err := schema.Exec(db, "drop-all"); err != nil {
-			logger.Panicln(err.Error())
+			log.Panicln(err.Error())
 		}
 	}
 
