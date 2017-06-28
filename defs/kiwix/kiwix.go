@@ -1,19 +1,47 @@
-package main
+package kiwix
 
 import (
 	"database/sql"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
+	"github.com/archivers-space/task-mgmt/tasks"
 	"net/http"
 	"strings"
 )
 
-func updateKiwixSources(db *sql.DB) error {
+// internal database connection pointer, set it with SetDB
+// TODO - make this not bad
+var db *sql.DB
+
+// set the DB connection for this package
+func SetDB(d *sql.DB) {
+	db = d
+}
+
+type TaskUpdateSources struct {
+	// no params
+}
+
+func NewTaskUpdateSources() tasks.Task {
+	return &TaskUpdateSources{}
+}
+
+func (t *TaskUpdateSources) Validate() error {
+	return nil
+}
+
+func (t *TaskUpdateSources) Do(pch chan tasks.Progress) {
+	p := &tasks.Progress{Percent: 0.0, Step: 0, Steps: 4, Status: "fetching zims list"}
+	pch <- p
+
 	zims, err := FetchKiwixZims()
 	if err != nil {
-		return err
+		p.Error = fmt.Errorf("Error fetching zims: %s", err.Error())
+		pch <- p
+		return
 	}
 
+	// TODO - uh oh, how do we do DB stuff in here?
 	sources, err := ReadSources(db, "created DESC", 100, 0)
 	if err != nil {
 		return err
@@ -34,9 +62,12 @@ func updateKiwixSources(db *sql.DB) error {
 			}
 		}
 	}
-
-	return nil
 }
+
+// func updateKiwixSources(db *sql.DB) error {
+
+// 	return nil
+// }
 
 // url to scrape
 const kiwixContentListUrl = "http://wiki.kiwix.org/wiki/Content_in_all_languages"
