@@ -20,6 +20,19 @@ var templates = template.Must(template.ParseFiles(
 	"views/message.html",
 ))
 
+func ipfsAdd(w http.ResponseWriter, r *http.Request) {
+	err := SubmitTask("ipfs.add", map[string]string{
+		"url":              r.FormValue("url"),
+		"ipfsApiServerUrl": cfg.IpfsApiUrl,
+	})
+	if err != nil {
+		renderError(w, err)
+		return
+	}
+
+	renderMessage(w, "dope", "message sent")
+}
+
 // renderTemplate renders a template with the values of cfg.TemplateData
 func renderTemplate(w http.ResponseWriter, tmpl string, data interface{}) {
 	if data == nil {
