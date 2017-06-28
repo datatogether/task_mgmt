@@ -106,7 +106,7 @@ func initConfig(mode string) (cfg *config, err error) {
 }
 
 func packagePath(path string) string {
-	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/tasks", path)
+	return filepath.Join(os.Getenv("GOPATH"), "src/github.com/archivers-space/task-mgmt", path)
 }
 
 // requireConfigStrings panics if any of the passed in values aren't set

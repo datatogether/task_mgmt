@@ -1,6 +1,6 @@
 .DS_Store
 gin-bin
-tasks
+task-mgmt
 coverage.out
 config.*.json
 *.env

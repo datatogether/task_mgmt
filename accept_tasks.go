@@ -1,14 +1,20 @@
 package main
 
 import (
-	"bytes"
+	"encoding/json"
 	"fmt"
+	"github.com/archivers-space/task-mgmt/defs/ipfs"
+	"github.com/archivers-space/task-mgmt/tasks"
 	"github.com/streadway/amqp"
-	"io/ioutil"
-	"mime/multipart"
-	"net/http"
 )
 
+// taskdefs is a map of all possible task names to their respective "New" funcs
+var taskdefs = map[string]tasks.NewTaskFunc{
+	"ipfs.add": ipfs.NewTaskAdd,
+}
+
+// start accepting tasks, if setup doesn't error, it returns a stop channel
+// writing to stop will teardown the func and stop accepting tasks
 func acceptTasks() (stop chan bool, err error) {
 	stop = make(chan bool)
 
@@ -23,7 +29,7 @@ func acceptTasks() (stop chan bool, err error) {
 	}
 
 	q, err := ch.QueueDeclare(
-		"hello", // name
+		"tasks", // name
 		false,   // durable
 		false,   // delete when unused
 		false,   // exclusive
@@ -37,7 +43,7 @@ func acceptTasks() (stop chan bool, err error) {
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		true,   // auto-ack
+		false,  // auto-ack
 		false,  // exclusive
 		false,  // no-local
 		false,  // no-wait
@@ -49,53 +55,39 @@ func acceptTasks() (stop chan bool, err error) {
 
 	go func() {
 		for d := range msgs {
-			log.Printf("Received a message: %s", d.Body)
-
-			body := &bytes.Buffer{}
-			w := multipart.NewWriter(body)
-			f, err := w.CreateFormFile("path", "hello-world.txt")
-			if err != nil {
-				log.Printf("error creating form file: %s", err.Error())
+			newTask := taskdefs[d.Type]
+			if newTask == nil {
+				log.Errorf("unknown task type: %s", d.Type)
+				d.Nack(false, false)
 				continue
 			}
 
-			// TODO - handle errors
-			f.Write([]byte("hello world"))
-
-			if err := w.Close(); err != nil {
-				log.Printf("error closing form file: %s", err.Error())
+			task := newTask()
+			if err := json.Unmarshal(d.Body, task); err != nil {
+				log.Errorf("error decoding task body: %s", err.Error())
+				d.Nack(false, false)
 				continue
 			}
 
-			req, err := http.NewRequest("POST", fmt.Sprintf("%s/add", cfg.IpfsApiUrl), body)
-			if err != nil {
-				log.Printf("error creating request: %s", err.Error())
-				continue
+			pc := make(chan tasks.Progress, 10)
+			task.Do(pc)
+			for p := range pc {
+				if p.Error != nil {
+					log.Errorf("task error: %s", err.Error())
+					d.Nack(false, false)
+					break
+				}
+				if p.Done {
+					log.Infof("completed task: %s, %s", d.MessageId, d.Type)
+					d.Ack(false)
+					break
+				}
 			}
-
-			req.Header.Set("Content-Type", w.FormDataContentType())
-
-			res, err := http.DefaultClient.Do(req)
-			if err != nil {
-				log.Printf("error sending request: %s", err.Error())
-				continue
-			}
-			defer res.Body.Close()
-
-			data, err := ioutil.ReadAll(res.Body)
-			if err != nil {
-				log.Printf("error reading response body: %s", err.Error())
-				continue
-			}
-			log.Println(string(data))
-
 		}
 		<-stop
 		ch.Close()
 		conn.Close()
 	}()
-
-	log.Printf(" [*] Waiting for messages. To exit press CTRL+C")
 
 	return stop, nil
 }
