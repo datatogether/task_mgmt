@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/archivers-space/task-mgmt/tasks"
+	"github.com/datatogether/task-mgmt/tasks"
 	"net/http"
 	"strings"
 )

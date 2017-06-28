@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/archivers-space/task-mgmt/defs/ipfs"
-	"github.com/archivers-space/task-mgmt/tasks"
+	"github.com/datatogether/task-mgmt/defs/ipfs"
+	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/streadway/amqp"
 )
 
