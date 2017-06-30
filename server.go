@@ -52,6 +52,7 @@ func main() {
 	}
 
 	connectToAppDb()
+	sql_datastore.SetDB(appDB)
 	store.Register(
 		&tasks.Task{},
 		&source.Source{},
