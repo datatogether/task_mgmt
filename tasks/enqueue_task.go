@@ -1,4 +1,4 @@
-package main
+package tasks
 
 import (
 	"encoding/json"
@@ -6,8 +6,14 @@ import (
 	"github.com/streadway/amqp"
 )
 
+var taskdefs = map[string]NewTaskFunc{}
+
+func Register(name string, f NewTaskFunc) {
+	taskdefs[name] = f
+}
+
 // Submit this Task for completion
-func EnqueueTask(typ string, params interface{}) error {
+func EnqueueTask(amqpurl string, typ string, params interface{}) error {
 	if taskdefs[typ] == nil {
 		return fmt.Errorf("unrecognized task type: '%s'", typ)
 	}
@@ -28,7 +34,7 @@ func EnqueueTask(typ string, params interface{}) error {
 		return fmt.Errorf("Invalid task: %s", err.Error())
 	}
 
-	conn, err := amqp.Dial(cfg.AmqpUrl)
+	conn, err := amqp.Dial(amqpurl)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to RabbitMQ: %s", err.Error())
 	}

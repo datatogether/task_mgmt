@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"github.com/datatogether/task-mgmt/tasks"
 	"net"
 	"net/rpc"
 )
@@ -15,7 +16,11 @@ func listenRpc() error {
 		return nil
 	}
 
-	if err := rpc.Register(TaskRequests); err != nil {
+	taskRequests := &tasks.TaskRequests{
+		AmqpUrl: cfg.AmqpUrl,
+		Store:   store,
+	}
+	if err := rpc.Register(taskRequests); err != nil {
 		log.Infof("register RPC Users error: %s", err)
 		return err
 	}
