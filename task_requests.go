@@ -8,6 +8,19 @@ var TaskRequests = new(Tasks)
 
 type Tasks int
 
+type TasksEnqueueParams struct {
+	Type   string
+	Params map[string]interface{}
+}
+
+func (Tasks) Enqueue(params *TasksEnqueueParams, ok *bool) (err error) {
+	if err := EnqueueTask(params.Type, params.Params); err != nil {
+		return err
+	}
+	*ok = true
+	return nil
+}
+
 type TasksGetParams struct {
 	Id string
 }

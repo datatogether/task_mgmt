@@ -15,8 +15,9 @@ var taskdefs = map[string]tasks.NewTaskFunc{
 	"kiwix.updateSources": kiwix.NewTaskUpdateSources,
 }
 
-// start accepting tasks, if setup doesn't error, it returns a stop channel
-// writing to stop will teardown the func and stop accepting tasks
+// start accepting tasks from the queue, if setup doesn't error,
+// it returns a stop channel writing to stop will teardown the
+// func and stop accepting tasks
 func acceptTasks() (stop chan bool, err error) {
 	stop = make(chan bool)
 
@@ -57,49 +58,12 @@ func acceptTasks() (stop chan bool, err error) {
 
 	go func() {
 		for d := range msgs {
-			newTask := taskdefs[d.Type]
-			if newTask == nil {
-				log.Errorf("unknown task type: %s", d.Type)
+			if err := DoTask(d.Type, d.Body); err != nil {
+				log.Errorf("task error: %s", err.Error())
 				d.Nack(false, false)
-				continue
-			}
-
-			task := newTask()
-			if err := json.Unmarshal(d.Body, task); err != nil {
-				log.Errorf("error decoding task body: %s", err.Error())
-				d.Nack(false, false)
-				continue
-			}
-
-			// If the task supports the SqlDBTask interface,
-			// pass in our host db connection
-			// if dbT, ok := task.(tasks.SqlDbTask); ok {
-			// 	dbT.SetSqlDB(appDB)
-			// }
-
-			// If the task supports the DatastoreTask interface,
-			// pass in our host db connection
-			if dsT, ok := task.(tasks.DatastoreTaskable); ok {
-				dsT.SetDatastore(store)
-			}
-
-			// created buffered progress updates channel
-			pc := make(chan tasks.Progress, 10)
-
-			// execute the task in a goroutine
-			go task.Do(pc)
-
-			for p := range pc {
-				if p.Error != nil {
-					log.Errorf("task error: %s", err.Error())
-					d.Nack(false, false)
-					break
-				}
-				if p.Done {
-					log.Infof("completed task: %s, %s", d.MessageId, d.Type)
-					d.Ack(false)
-					break
-				}
+			} else {
+				log.Infof("completed task: %s, %s", d.MessageId, d.Type)
+				d.Ack(false)
 			}
 		}
 		<-stop
@@ -108,4 +72,44 @@ func acceptTasks() (stop chan bool, err error) {
 	}()
 
 	return stop, nil
+}
+
+// DoTask performs the designated task
+func DoTask(typ string, body []byte) error {
+	newTask := taskdefs[typ]
+	if newTask == nil {
+		return fmt.Errorf("unknown task type: %s", typ)
+	}
+
+	task := newTask()
+	if err := json.Unmarshal(body, task); err != nil {
+		return fmt.Errorf("error decoding task body json: %s", err.Error())
+	}
+
+	// If the task supports the DatastoreTask interface,
+	// pass in our host db connection
+	if dsT, ok := task.(tasks.DatastoreTaskable); ok {
+		dsT.SetDatastore(store)
+	}
+
+	// created buffered progress updates channel
+	pc := make(chan tasks.Progress, 10)
+
+	// execute the task in a goroutine
+	go task.Do(pc)
+
+	for p := range pc {
+		// TODO - log progress and pipe out of this func
+		// so others can listen in for updates
+		// log.Printf("")
+
+		if p.Error != nil {
+			return p.Error
+		}
+		if p.Done {
+			return nil
+		}
+	}
+
+	return nil
 }

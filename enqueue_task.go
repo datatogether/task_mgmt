@@ -6,8 +6,8 @@ import (
 	"github.com/streadway/amqp"
 )
 
-//
-func SubmitTask(typ string, params interface{}) error {
+// Submit this Task for completion
+func EnqueueTask(typ string, params interface{}) error {
 	if taskdefs[typ] == nil {
 		return fmt.Errorf("unrecognized task type: '%s'", typ)
 	}
@@ -18,7 +18,7 @@ func SubmitTask(typ string, params interface{}) error {
 	}
 
 	// create the task locally to check validity
-	// TODO - this should be moved into tasks package
+	// TODO - this should be moved into tasks package?
 	t := taskdefs[typ]()
 	if err := json.Unmarshal(body, t); err != nil {
 		return fmt.Errorf("Error creating task from JSON: %s", err.Error())
@@ -59,7 +59,7 @@ func SubmitTask(typ string, params interface{}) error {
 		false,  // immediate
 		amqp.Publishing{
 			ContentType: "application/json",
-			Type:        "ipfs.add",
+			Type:        typ,
 			Body:        body,
 		})
 

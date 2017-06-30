@@ -22,7 +22,7 @@ var templates = template.Must(template.ParseFiles(
 ))
 
 func ipfsAdd(w http.ResponseWriter, r *http.Request) {
-	err := SubmitTask("ipfs.add", map[string]string{
+	err := EnqueueTask("ipfs.add", map[string]string{
 		"url":              r.FormValue("url"),
 		"ipfsApiServerUrl": cfg.IpfsApiUrl,
 	})
