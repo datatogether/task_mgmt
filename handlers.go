@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/datatogether/task-mgmt/tasks"
 	"html/template"
 	"io"
 	"net/http"
@@ -71,7 +72,7 @@ func reqParamBool(key string, r *http.Request) (bool, error) {
 }
 
 func HomeHandler(w http.ResponseWriter, r *http.Request) {
-	tasks, err := ReadTasks(appDB, "created DESC", 30, 0)
+	tsks, err := tasks.ReadTasks(store, "created DESC", 30, 0)
 	if err != nil {
 		log.Info(err.Error())
 		renderError(w, err)
@@ -88,37 +89,37 @@ func HomeHandler(w http.ResponseWriter, r *http.Request) {
 
 	renderTemplate(w, "tasks.html", map[string]interface{}{
 		"writePerm": perm,
-		"tasks":     tasks,
+		"tasks":     tsks,
 	})
 }
 
 func RunTaskHandler(w http.ResponseWriter, r *http.Request) {
-	t := &Task{
+	t := &tasks.Task{
 		Id: r.URL.Path[len("/tasks/run/"):],
 	}
-	if err := t.Read(appDB); err != nil {
+	if err := t.Read(store); err != nil {
 		renderError(w, err)
 		return
 	}
 
-	if err := t.Run(appDB); err != nil {
-		renderError(w, err)
-		return
-	}
+	// if err := t.Run(store); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
 	renderMessage(w, "Now Running Task", "We've shipped your task off for execution, check back here in 12-24 hours to see status!")
 }
 
 func CancelTaskHandler(w http.ResponseWriter, r *http.Request) {
-	t := &Task{
+	t := &tasks.Task{
 		Id: r.URL.Path[len("/tasks/cancel/"):],
 	}
-	if err := t.Read(appDB); err != nil {
+	if err := t.Read(store); err != nil {
 		renderError(w, err)
 		return
 	}
 
-	if err := t.Cancel(appDB); err != nil {
+	if err := t.Cancel(store); err != nil {
 		renderError(w, err)
 		return
 	}
@@ -127,15 +128,15 @@ func CancelTaskHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func TaskSuccessHandler(w http.ResponseWriter, r *http.Request) {
-	t := &Task{
+	t := &tasks.Task{
 		Id: r.URL.Path[len("/tasks/success/"):],
 	}
-	if err := t.Read(appDB); err != nil {
+	if err := t.Read(store); err != nil {
 		renderError(w, err)
 		return
 	}
 
-	if err := t.Cancel(appDB); err != nil {
+	if err := t.Cancel(store); err != nil {
 		renderError(w, err)
 		return
 	}
@@ -144,10 +145,10 @@ func TaskSuccessHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func TaskFailHandler(w http.ResponseWriter, r *http.Request) {
-	t := &Task{
+	t := &tasks.Task{
 		Id: r.URL.Path[len("/tasks/fail/"):],
 	}
-	if err := t.Read(appDB); err != nil {
+	if err := t.Read(store); err != nil {
 		renderError(w, err)
 		return
 	}
@@ -157,7 +158,7 @@ func TaskFailHandler(w http.ResponseWriter, r *http.Request) {
 		msg = "Task Failed"
 	}
 
-	if err := t.Errored(appDB, msg); err != nil {
+	if err := t.Errored(store, msg); err != nil {
 		renderError(w, err)
 		return
 	}

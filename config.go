@@ -34,6 +34,9 @@ type config struct {
 	// root url for service
 	UrlRoot string
 
+	// port to listen on for RPC calls
+	RpcPort string
+
 	// url of postgres app db
 	PostgresDbUrl string
 

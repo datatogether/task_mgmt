@@ -4,13 +4,15 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
+	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/streadway/amqp"
 )
 
 // taskdefs is a map of all possible task names to their respective "New" funcs
 var taskdefs = map[string]tasks.NewTaskFunc{
-	"ipfs.add": ipfs.NewTaskAdd,
+	"ipfs.add":            ipfs.NewTaskAdd,
+	"kiwix.updateSources": kiwix.NewTaskUpdateSources,
 }
 
 // start accepting tasks, if setup doesn't error, it returns a stop channel
@@ -71,13 +73,13 @@ func acceptTasks() (stop chan bool, err error) {
 
 			// If the task supports the SqlDBTask interface,
 			// pass in our host db connection
-			if dbT, ok := task.(tasks.SqlDbTask); ok {
-				dbT.SetSqlDB(appDB)
-			}
+			// if dbT, ok := task.(tasks.SqlDbTask); ok {
+			// 	dbT.SetSqlDB(appDB)
+			// }
 
 			// If the task supports the DatastoreTask interface,
 			// pass in our host db connection
-			if dsT, ok := task.(tasks.DatastoreTask); ok {
+			if dsT, ok := task.(tasks.DatastoreTaskable); ok {
 				dsT.SetDatastore(store)
 			}
 

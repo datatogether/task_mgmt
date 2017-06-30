@@ -4,6 +4,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/datatogether/task-mgmt/tasks"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,7 +13,7 @@ import (
 
 // SendTaskRequestEmail sends an email to cfg.EmailNotificationRecipients
 // with details for a newly requested task
-func SendTaskRequestEmail(t *Task) error {
+func SendTaskRequestEmail(t *tasks.Task) error {
 	if len(cfg.EmailNotificationRecipients) == 0 {
 		return fmt.Errorf("no recipients are set to send email to")
 	}
@@ -35,7 +36,7 @@ func SendTaskRequestEmail(t *Task) error {
 
 // SendTaskRequestEmail sends an email to cfg.EmailNotificationRecipients
 // notifying them of a cancelled request
-func SendTaskCancelEmail(t *Task) error {
+func SendTaskCancelEmail(t *tasks.Task) error {
 	if len(cfg.EmailNotificationRecipients) == 0 {
 		return fmt.Errorf("no recipients are set to send email to")
 	}

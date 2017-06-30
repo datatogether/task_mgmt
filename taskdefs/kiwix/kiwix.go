@@ -1,13 +1,11 @@
 package kiwix
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/source"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/ipfs/go-datastore"
-	"strings"
 )
 
 type TaskUpdateSources struct {
@@ -15,11 +13,11 @@ type TaskUpdateSources struct {
 	store datastore.Datastore
 }
 
-func NewTaskUpdateSources() tasks.Task {
+func NewTaskUpdateSources() tasks.Taskable {
 	return &TaskUpdateSources{}
 }
 
-func (t *TaskUpdateSources) Validate() error {
+func (t *TaskUpdateSources) Valid() error {
 	return nil
 }
 

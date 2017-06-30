@@ -7,6 +7,9 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/datatogether/sql_datastore"
+	"github.com/datatogether/task-mgmt/source"
+	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -27,6 +30,9 @@ var (
 
 	// application database connection
 	appDB *sql.DB
+
+	// hoist default store
+	store = sql_datastore.DefaultStore
 )
 
 func init() {
@@ -46,7 +52,12 @@ func main() {
 	}
 
 	connectToAppDb()
+	store.Register(
+		&tasks.Task{},
+		&source.Source{},
+	)
 	// go update(appDB)
+	go listenRpc()
 
 	stop, err := acceptTasks()
 	if err != nil {
@@ -67,7 +78,9 @@ func main() {
 	// return unless there's an error
 	log.Fatal(StartServer(cfg, s))
 
-	// lol will never happen
+	// lol will never happen, left here as a reminder
+	// that we should be able to stop accepting new tasks
+	// at any point without issue
 	stop <- true
 }
 
