@@ -1,12 +1,15 @@
-package main
+package tasks
 
 import (
 	"fmt"
+	"github.com/ipfs/go-datastore"
 	"testing"
 )
 
 func TestTaskStorage(t *testing.T) {
-	defer resetTestData(appDB, "tasks")
+	// defer resetTestData(store, "tasks")
+
+	store := datastore.NewMapDatastore()
 
 	task := &Task{
 		RepoUrl:        "test_repo_url",
@@ -14,12 +17,12 @@ func TestTaskStorage(t *testing.T) {
 		SourceChecksum: "test_source_checksum",
 		SourceUrl:      "test_source_url",
 	}
-	if err := task.Save(appDB); err != nil {
+	if err := task.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
-	if err := task.Run(appDB); err != nil {
+	if err := task.Run(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -28,7 +31,7 @@ func TestTaskStorage(t *testing.T) {
 		return
 	}
 
-	if err := task.Cancel(appDB); err != nil {
+	if err := task.Cancel(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -37,7 +40,7 @@ func TestTaskStorage(t *testing.T) {
 		return
 	}
 
-	if err := task.Run(appDB); err != nil {
+	if err := task.Run(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -46,7 +49,7 @@ func TestTaskStorage(t *testing.T) {
 		return
 	}
 
-	if err := task.Errored(appDB, "test failure message"); err != nil {
+	if err := task.Errored(store, "test failure message"); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -55,7 +58,7 @@ func TestTaskStorage(t *testing.T) {
 		return
 	}
 
-	if err := task.Run(appDB); err != nil {
+	if err := task.Run(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -64,7 +67,7 @@ func TestTaskStorage(t *testing.T) {
 		return
 	}
 
-	if err := task.Succeeded(appDB, "test_success_url", "test_success_hash"); err != nil {
+	if err := task.Succeeded(store, "test_success_url", "test_success_hash"); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -74,7 +77,7 @@ func TestTaskStorage(t *testing.T) {
 	}
 
 	task2 := &Task{Id: task.Id}
-	if err := task2.Read(appDB); err != nil {
+	if err := task2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -84,7 +87,7 @@ func TestTaskStorage(t *testing.T) {
 		return
 	}
 
-	if err := task.Delete(appDB); err != nil {
+	if err := task.Delete(store); err != nil {
 		t.Error(err.Error())
 		return
 	}

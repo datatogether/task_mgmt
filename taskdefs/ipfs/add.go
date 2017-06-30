@@ -17,7 +17,7 @@ type TaskAdd struct {
 	IpfsApiServerUrl string `json:"ipfsApiServerUrl"` // url of IPFS api server
 }
 
-func NewTaskAdd() tasks.Task {
+func NewTaskAdd() tasks.Taskable {
 	return &TaskAdd{}
 }
 

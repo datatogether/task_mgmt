@@ -1,13 +1,17 @@
-package main
+package tasks
 
 import (
 	"database/sql"
 	"fmt"
+	"github.com/datatogether/sql_datastore"
+	"github.com/datatogether/sqlutil"
+	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"time"
 )
 
-// a Task represents the state of work to be done
+// Task represents the storable state of a task
+// TODO - this needs heavy generalization
 type Task struct {
 	// uuid identifier for task
 	Id string `json:"id"`
@@ -41,6 +45,18 @@ type Task struct {
 	ResultHash string `json:"resultHash"`
 	// any message associated with this task (failure, info, etc.)
 	Message string `json:"message"`
+}
+
+func (t Task) DatastoreType() string {
+	return "Task"
+}
+
+func (t Task) GetId() string {
+	return t.Id
+}
+
+func (t Task) Key() datastore.Key {
+	return datastore.NewKey(fmt.Sprintf("%s:%s", t.DatastoreType(), t.GetId()))
 }
 
 func (t *Task) StatusString() string {
@@ -81,79 +97,115 @@ func (t *Task) NextActionTitle() (title string, err error) {
 	}
 }
 
-func (t *Task) Run(db *sql.DB) error {
+// Run marks the task as "running", this should probably not be called run
+// TODO - naming refactor / negotiate relationship between task que & task model
+func (t *Task) Run(store datastore.Datastore) error {
 	now := time.Now()
 	t.Request = &now
 	t.Fail = nil
 	t.Success = nil
 
-	if err := SendTaskRequestEmail(t); err != nil {
-		return err
-	}
-	return t.Save(db)
+	// if err := SendTaskRequestEmail(t); err != nil {
+	// 	return err
+	// }
+	return t.Save(store)
 }
 
-func (t *Task) Cancel(db *sql.DB) error {
+func (t *Task) Cancel(store datastore.Datastore) error {
 	now := time.Now()
 	t.Fail = &now
 	t.Success = nil
 	t.Message = "Task Cancelled"
 
-	if err := SendTaskCancelEmail(t); err != nil {
-		return err
-	}
+	// if err := SendTaskCancelEmail(t); err != nil {
+	// 	return err
+	// }
 
-	return t.Save(db)
+	return t.Save(store)
 }
 
-func (t *Task) Errored(db *sql.DB, message string) error {
+func (t *Task) Errored(store datastore.Datastore, message string) error {
 	now := time.Now()
 	t.Fail = &now
 	t.Message = message
-	return t.Save(db)
+	return t.Save(store)
 }
 
-func (t *Task) Succeeded(db *sql.DB, url, hash string) error {
+func (t *Task) Succeeded(store datastore.Datastore, url, hash string) error {
 	now := time.Now()
 	t.Success = &now
 	t.ResultUrl = url
 	t.ResultHash = hash
 	t.Message = ""
-	return t.Save(db)
+	return t.Save(store)
 }
 
-func (t *Task) Read(db sqlQueryable) error {
+func (t *Task) Read(store datastore.Datastore) error {
 	if t.Id == "" {
-		return ErrNotFound
+		return datastore.ErrNotFound
 	}
-	return t.UnmarshalSQL(db.QueryRow(qTaskReadById, t.Id))
-}
 
-func (t *Task) Save(db sqlQueryExecable) error {
-	prev := &Task{Id: t.Id}
-	if err := prev.Read(db); err == ErrNotFound {
-		t.Id = uuid.New()
-		t.Created = time.Now().Round(time.Second).In(time.UTC)
-		t.Updated = t.Created
-		_, err := db.Exec(qTaskInsert, t.sqlArgs()...)
-		return err
-	} else if err != nil {
-		return err
-	} else {
-		t.Updated = time.Now().Round(time.Second).In(time.UTC)
-		_, err := db.Exec(qTaskUpdate, t.sqlArgs()...)
+	ti, err := store.Get(t.Key())
+	if err != nil {
 		return err
 	}
 
+	got, ok := ti.(*Task)
+	if !ok {
+		return fmt.Errorf("Invalid Response")
+	}
+	*t = *got
 	return nil
 }
 
-func (t *Task) Delete(db sqlQueryExecable) error {
-	_, err := db.Exec(qTaskDelete, t.Id)
-	return err
+func (t *Task) Save(store datastore.Datastore) (err error) {
+	var exists bool
+	exists, err = store.Has(t.Key())
+	if err != nil {
+		return err
+	}
+
+	if !exists {
+		t.Id = uuid.New()
+		t.Created = time.Now().Round(time.Second).In(time.UTC)
+		t.Updated = t.Created
+	} else {
+		t.Updated = time.Now().Round(time.Second).In(time.UTC)
+	}
+
+	return store.Put(t.Key(), t)
 }
 
-func (t *Task) UnmarshalSQL(row sqlScannable) error {
+func (t *Task) Delete(store datastore.Datastore) error {
+	return store.Delete(t.Key())
+}
+
+func (t *Task) NewSQLModel(id string) sql_datastore.Model {
+	return &Task{Id: id}
+}
+
+func (t *Task) SQLQuery(cmd sql_datastore.Cmd) string {
+	switch cmd {
+	case sql_datastore.CmdCreateTable:
+		return qTaskCreateTable
+	case sql_datastore.CmdExistsOne:
+		return qTaskExists
+	case sql_datastore.CmdSelectOne:
+		return qTaskReadById
+	case sql_datastore.CmdInsertOne:
+		return qTaskInsert
+	case sql_datastore.CmdUpdateOne:
+		return qTaskUpdate
+	case sql_datastore.CmdDeleteOne:
+		return qTaskDelete
+	case sql_datastore.CmdList:
+		return qTasks
+	default:
+		return ""
+	}
+}
+
+func (t *Task) UnmarshalSQL(row sqlutil.Scannable) error {
 	var (
 		id, title, repoUrl, repoCommit, source, sourceChecksum, message, result, resultHash string
 		created, updated                                                                    time.Time
@@ -164,7 +216,7 @@ func (t *Task) UnmarshalSQL(row sqlScannable) error {
 		&repoUrl, &repoCommit, &source, &sourceChecksum, &result, &resultHash, &message,
 	)
 	if err == sql.ErrNoRows {
-		return ErrNotFound
+		return datastore.ErrNotFound
 	}
 
 	*t = Task{
@@ -186,21 +238,28 @@ func (t *Task) UnmarshalSQL(row sqlScannable) error {
 	return nil
 }
 
-func (t *Task) sqlArgs() []interface{} {
-	return []interface{}{
-		t.Id,
-		t.Created,
-		t.Updated,
-		t.Title,
-		t.Request,
-		t.Success,
-		t.Fail,
-		t.RepoUrl,
-		t.RepoCommit,
-		t.SourceUrl,
-		t.SourceChecksum,
-		t.ResultUrl,
-		t.ResultHash,
-		t.Message,
+func (t *Task) SQLParams(cmd sql_datastore.Cmd) []interface{} {
+	switch cmd {
+	case sql_datastore.CmdSelectOne, sql_datastore.CmdExistsOne, sql_datastore.CmdDeleteOne:
+		return []interface{}{t.Id}
+	case sql_datastore.CmdList:
+		return []interface{}{}
+	default:
+		return []interface{}{
+			t.Id,
+			t.Created,
+			t.Updated,
+			t.Title,
+			t.Request,
+			t.Success,
+			t.Fail,
+			t.RepoUrl,
+			t.RepoCommit,
+			t.SourceUrl,
+			t.SourceChecksum,
+			t.ResultUrl,
+			t.ResultHash,
+			t.Message,
+		}
 	}
 }

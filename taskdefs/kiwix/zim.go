@@ -1,79 +1,16 @@
 package kiwix
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/PuerkitoBio/goquery"
-	"github.com/datatogether/task-mgmt/tasks"
 	"net/http"
-	"strings"
 )
-
-// internal database connection pointer, set it with SetDB
-// TODO - make this not bad
-var db *sql.DB
-
-// set the DB connection for this package
-func SetDB(d *sql.DB) {
-	db = d
-}
-
-type TaskUpdateSources struct {
-	// no params
-}
-
-func NewTaskUpdateSources() tasks.Task {
-	return &TaskUpdateSources{}
-}
-
-func (t *TaskUpdateSources) Validate() error {
-	return nil
-}
-
-func (t *TaskUpdateSources) Do(pch chan tasks.Progress) {
-	p := &tasks.Progress{Percent: 0.0, Step: 0, Steps: 4, Status: "fetching zims list"}
-	pch <- p
-
-	zims, err := FetchKiwixZims()
-	if err != nil {
-		p.Error = fmt.Errorf("Error fetching zims: %s", err.Error())
-		pch <- p
-		return
-	}
-
-	// TODO - uh oh, how do we do DB stuff in here?
-	sources, err := ReadSources(db, "created DESC", 100, 0)
-	if err != nil {
-		return err
-	}
-
-	for _, s := range sources {
-		for _, z := range zims {
-			if s.Url == z.Url {
-				if err := z.FetchMd5(); err != nil {
-					return err
-				}
-
-				if z.Md5 != s.Checksum {
-					s.Title = z.Title()
-					s.Checksum = z.Md5
-					s.Save(db)
-				}
-			}
-		}
-	}
-}
-
-// func updateKiwixSources(db *sql.DB) error {
-
-// 	return nil
-// }
 
 // url to scrape
 const kiwixContentListUrl = "http://wiki.kiwix.org/wiki/Content_in_all_languages"
 
-// KiwixZim represents a Zim package on the Kiwix service
-type KiwixZim struct {
+// Zim represents a Zim package on the Kiwix service
+type Zim struct {
 	// Name of the project that's been archived
 	Project string
 	// ISO Language code
@@ -92,11 +29,11 @@ type KiwixZim struct {
 	Url string
 }
 
-func (z *KiwixZim) Title() string {
+func (z *Zim) Title() string {
 	return fmt.Sprintf("%s - %s", z.Project, z.Language)
 }
 
-func (z *KiwixZim) FetchMd5() error {
+func (z *Zim) FetchMd5() error {
 	res, err := http.Get(z.Md5Url)
 	if err != nil {
 		return err
@@ -109,8 +46,8 @@ func (z *KiwixZim) FetchMd5() error {
 	return nil
 }
 
-func FetchKiwixZims() ([]*KiwixZim, error) {
-	zims := []*KiwixZim{}
+func FetchZims() ([]*Zim, error) {
+	zims := []*Zim{}
 
 	doc, err := goquery.NewDocument(kiwixContentListUrl)
 	if err != nil {
@@ -124,7 +61,7 @@ func FetchKiwixZims() ([]*KiwixZim, error) {
 			return
 		}
 
-		zim := &KiwixZim{}
+		zim := &Zim{}
 
 		el.ChildrenFiltered("td").Each(func(j int, cell *goquery.Selection) {
 			switch j {

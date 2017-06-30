@@ -3,7 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/datatogether/task-mgmt/defs/ipfs"
+	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/streadway/amqp"
 )
@@ -69,8 +69,24 @@ func acceptTasks() (stop chan bool, err error) {
 				continue
 			}
 
+			// If the task supports the SqlDBTask interface,
+			// pass in our host db connection
+			if dbT, ok := task.(tasks.SqlDbTask); ok {
+				dbT.SetSqlDB(appDB)
+			}
+
+			// If the task supports the DatastoreTask interface,
+			// pass in our host db connection
+			if dsT, ok := task.(tasks.DatastoreTask); ok {
+				dsT.SetDatastore(store)
+			}
+
+			// created buffered progress updates channel
 			pc := make(chan tasks.Progress, 10)
-			task.Do(pc)
+
+			// execute the task in a goroutine
+			go task.Do(pc)
+
 			for p := range pc {
 				if p.Error != nil {
 					log.Errorf("task error: %s", err.Error())

@@ -1,28 +1,28 @@
-package main
+package source
 
 import (
 	"fmt"
+	"github.com/ipfs/go-datastore"
 	"testing"
 )
 
 func TestSourceStorage(t *testing.T) {
-	defer resetTestData(appDB, "sources", "repo_sources")
+	store := datastore.NewMapDatastore()
 
-	s := &Source{
-		Title:    "test source title",
-		Url:      "test_source_url",
-		Checksum: "test_source_checksum",
-		Meta: map[string]interface{}{
-			"key": "value",
-		},
+	s := &Source{Title: "Test Source", Url: "https://foo.foo"}
+	if err := s.Save(store); err != nil {
+		t.Error(err.Error())
+		return
 	}
-	if err := s.Save(appDB); err != nil {
+
+	s.Url = "https://bar.bar"
+	if err := s.Save(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
 
 	s2 := &Source{Id: s.Id}
-	if err := s2.Read(appDB); err != nil {
+	if err := s2.Read(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
@@ -32,7 +32,7 @@ func TestSourceStorage(t *testing.T) {
 		return
 	}
 
-	if err := s.Delete(appDB); err != nil {
+	if err := s.Delete(store); err != nil {
 		t.Error(err.Error())
 		return
 	}
