@@ -3,10 +3,16 @@ package tasks
 import (
 	"database/sql"
 	"fmt"
-	"github.com/datatogether/sql_datastore"
+	// "github.com/datatogether/sql_datastore"
 	"github.com/ipfs/go-datastore"
 	"github.com/ipfs/go-datastore/query"
 )
+
+var taskdefs = map[string]NewTaskFunc{}
+
+func RegisterTaskdef(name string, f NewTaskFunc) {
+	taskdefs[name] = f
+}
 
 func ReadTasks(store datastore.Datastore, orderby string, limit, offset int) ([]*Task, error) {
 	q := query.Query{
@@ -45,42 +51,43 @@ func ReadTasks(store datastore.Datastore, orderby string, limit, offset int) ([]
 	// return unmarshalTasks(rows, limit)
 }
 
-func GenerateAvailableTasks(db *sql.DB) ([]*Task, error) {
-	row, err := db.Query(qAvailableTasks)
-	if err != nil {
-		return nil, err
-	}
+// TODO - transfer to kiwix taskdef
+// func GenerateAvailableTasks(db *sql.DB) ([]*Task, error) {
+// 	row, err := db.Query(qAvailableTasks)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	// TODO - make not bad
-	store := sql_datastore.NewDatastore(db)
-	store.Register(&Task{})
+// 	// TODO - make not bad
+// 	store := sql_datastore.NewDatastore(db)
+// 	store.Register(&Task{})
 
-	tasks := []*Task{}
-	for row.Next() {
-		var (
-			repoUrl, repoCommit, sourceTitle, sourceUrl, sourceChecksum string
-		)
-		if err := row.Scan(&repoUrl, &repoCommit, &sourceTitle, &sourceUrl, &sourceChecksum); err != nil {
-			return nil, err
-		}
+// 	tasks := []*Task{}
+// 	for row.Next() {
+// 		var (
+// 			repoUrl, repoCommit, sourceTitle, sourceUrl, sourceChecksum string
+// 		)
+// 		if err := row.Scan(&repoUrl, &repoCommit, &sourceTitle, &sourceUrl, &sourceChecksum); err != nil {
+// 			return nil, err
+// 		}
 
-		t := &Task{
-			Title:          fmt.Sprintf("injest %s to ipfs", sourceTitle),
-			RepoUrl:        repoUrl,
-			RepoCommit:     repoCommit,
-			SourceUrl:      sourceUrl,
-			SourceChecksum: sourceChecksum,
-		}
+// 		t := &Task{
+// 			Title:          fmt.Sprintf("injest %s to ipfs", sourceTitle),
+// 			RepoUrl:        repoUrl,
+// 			RepoCommit:     repoCommit,
+// 			SourceUrl:      sourceUrl,
+// 			SourceChecksum: sourceChecksum,
+// 		}
 
-		if err := t.Save(store); err != nil {
-			return nil, err
-		}
+// 		if err := t.Save(store); err != nil {
+// 			return nil, err
+// 		}
 
-		tasks = append(tasks, t)
-	}
+// 		tasks = append(tasks, t)
+// 	}
 
-	return tasks, nil
-}
+// 	return tasks, nil
+// }
 
 func unmarshalTasks(rows *sql.Rows, limit int) ([]*Task, error) {
 	defer rows.Close()

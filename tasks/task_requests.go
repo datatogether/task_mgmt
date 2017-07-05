@@ -22,11 +22,20 @@ type TasksEnqueueParams struct {
 	Params map[string]interface{}
 }
 
-func (t TaskRequests) Enqueue(params *TasksEnqueueParams, ok *bool) (err error) {
-	if err := EnqueueTask(t.AmqpUrl, params.Type, params.Params); err != nil {
+func (r TaskRequests) Enqueue(params *TasksEnqueueParams, task *Task) (err error) {
+	t := &Task{
+		Type:   params.Type,
+		Params: params.Params,
+	}
+
+	if err := t.Enqueue(r.Store, r.AmqpUrl); err != nil {
 		return err
 	}
-	*ok = true
+
+	// if err := EnqueueTask(t.Store, t.AmqpUrl, params.Type, params.Params); err != nil {
+	// 	return err
+	// }
+	*task = *t
 	return nil
 }
 

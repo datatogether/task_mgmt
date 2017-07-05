@@ -1,77 +1,79 @@
 package tasks
 
-import (
-	"encoding/json"
-	"fmt"
-	"github.com/streadway/amqp"
-)
-
-var taskdefs = map[string]NewTaskFunc{}
-
-func Register(name string, f NewTaskFunc) {
-	taskdefs[name] = f
-}
+// import (
+// 	"encoding/json"
+// 	"fmt"
+// 	"github.com/ipfs/go-datastore"
+// 	"github.com/streadway/amqp"
+// 	"time"
+// )
 
 // Submit this Task for completion
-func EnqueueTask(amqpurl string, typ string, params interface{}) error {
-	if taskdefs[typ] == nil {
-		return fmt.Errorf("unrecognized task type: '%s'", typ)
-	}
+// func EnqueueTask(store datastore.Datastore, amqpurl string, typ string, params interface{}) error {
+// 	if taskdefs[typ] == nil {
+// 		return fmt.Errorf("unrecognized task type: '%s'", typ)
+// 	}
 
-	body, err := json.Marshal(params)
-	if err != nil {
-		return fmt.Errorf("Error marshaling params to JSON: %s", err.Error())
-	}
+// 	body, err := json.Marshal(params)
+// 	if err != nil {
+// 		return fmt.Errorf("Error marshaling params to JSON: %s", err.Error())
+// 	}
 
-	// create the task locally to check validity
-	// TODO - this should be moved into tasks package?
-	t := taskdefs[typ]()
-	if err := json.Unmarshal(body, t); err != nil {
-		return fmt.Errorf("Error creating task from JSON: %s", err.Error())
-	}
+// 	// create the task locally to check validity
+// 	// TODO - this should be moved into tasks package?
+// 	t := taskdefs[typ]()
+// 	if err := json.Unmarshal(body, t); err != nil {
+// 		return fmt.Errorf("Error creating task from JSON: %s", err.Error())
+// 	}
 
-	if err := t.Valid(); err != nil {
-		return fmt.Errorf("Invalid task: %s", err.Error())
-	}
+// 	if err := t.Valid(); err != nil {
+// 		return fmt.Errorf("Invalid task: %s", err.Error())
+// 	}
 
-	conn, err := amqp.Dial(amqpurl)
-	if err != nil {
-		return fmt.Errorf("Failed to connect to RabbitMQ: %s", err.Error())
-	}
-	defer conn.Close()
+// 	// tm := &Task{
+// 	// 	Title: t.name,
+// 	// }
 
-	ch, err := conn.Channel()
-	if err != nil {
-		return fmt.Errorf("Failed to connect to open channel: %s", err.Error())
-	}
-	defer ch.Close()
+// 	// tm.Save(store)
 
-	q, err := ch.QueueDeclare(
-		"tasks", // name
-		false,   // durable
-		false,   // delete when unused
-		false,   // exclusive
-		false,   // no-wait
-		nil,     // arguments
-	)
-	if err != nil {
-		return fmt.Errorf("Failed to declare a queue: %s", err.Error())
-	}
+// 	conn, err := amqp.Dial(amqpurl)
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to connect to RabbitMQ: %s", err.Error())
+// 	}
+// 	defer conn.Close()
 
-	err = ch.Publish(
-		"",     // exchange
-		q.Name, // routing key
-		false,  // mandatory
-		false,  // immediate
-		amqp.Publishing{
-			ContentType: "application/json",
-			Type:        typ,
-			Body:        body,
-		})
+// 	ch, err := conn.Channel()
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to connect to open channel: %s", err.Error())
+// 	}
+// 	defer ch.Close()
 
-	if err != nil {
-		return fmt.Errorf("Error publishing to queue: %s", err.Error())
-	}
+// 	q, err := ch.QueueDeclare(
+// 		"tasks", // name
+// 		false,   // durable
+// 		false,   // delete when unused
+// 		false,   // exclusive
+// 		false,   // no-wait
+// 		nil,     // arguments
+// 	)
+// 	if err != nil {
+// 		return fmt.Errorf("Failed to declare a queue: %s", err.Error())
+// 	}
 
-	return nil
-}
+// 	err = ch.Publish(
+// 		"",     // exchange
+// 		q.Name, // routing key
+// 		false,  // mandatory
+// 		false,  // immediate
+// 		amqp.Publishing{
+// 			ContentType: "application/json",
+// 			Type:        typ,
+// 			Body:        body,
+// 		})
+
+// 	if err != nil {
+// 		return fmt.Errorf("Error publishing to queue: %s", err.Error())
+// 	}
+
+// 	return nil
+// }

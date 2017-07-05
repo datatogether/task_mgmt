@@ -57,15 +57,26 @@ func acceptTasks() (stop chan bool, err error) {
 	}
 
 	go func() {
-		for d := range msgs {
-			if err := DoTask(d.Type, d.Body); err != nil {
+		for msg := range msgs {
+			// tasks.Tas
+			task, err := tasks.TaskFromDelivery(store, msg)
+			if err != nil {
 				log.Errorf("task error: %s", err.Error())
-				d.Nack(false, false)
-			} else {
-				log.Infof("completed task: %s, %s", d.MessageId, d.Type)
-				d.Ack(false)
+				msg.Nack(false, false)
+				continue
 			}
+
+			if err := task.Do(store); err != nil {
+				log.Errorf("task error: %s", err.Error())
+				msg.Nack(false, false)
+			} else {
+				log.Infof("completed task: %s, %s", msg.MessageId, msg.Type)
+				msg.Ack(false)
+			}
+
 		}
+		// TODO - figure out a way to bail out of the above loop
+		// if stop is ever published to
 		<-stop
 		ch.Close()
 		conn.Close()
@@ -75,14 +86,14 @@ func acceptTasks() (stop chan bool, err error) {
 }
 
 // DoTask performs the designated task
-func DoTask(typ string, body []byte) error {
-	newTask := taskdefs[typ]
+func DoTask(msg amqp.Delivery) error {
+	newTask := taskdefs[msg.Type]
 	if newTask == nil {
-		return fmt.Errorf("unknown task type: %s", typ)
+		return fmt.Errorf("unknown task type: %s", msg.Type)
 	}
 
 	task := newTask()
-	if err := json.Unmarshal(body, task); err != nil {
+	if err := json.Unmarshal(msg.Body, task); err != nil {
 		return fmt.Errorf("error decoding task body json: %s", err.Error())
 	}
 

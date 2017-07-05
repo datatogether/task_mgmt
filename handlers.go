@@ -22,11 +22,18 @@ var templates = template.Must(template.ParseFiles(
 ))
 
 func ipfsAdd(w http.ResponseWriter, r *http.Request) {
-	err := tasks.EnqueueTask(cfg.AmqpUrl, "ipfs.add", map[string]string{
-		"url":              r.FormValue("url"),
-		"ipfsApiServerUrl": cfg.IpfsApiUrl,
-	})
-	if err != nil {
+	t := &tasks.Task{
+		Type: "ipfs.add",
+		Params: map[string]interface{}{
+			"url":              r.FormValue("url"),
+			"upfsApiServerUrl": cfg.IpfsApiUrl,
+		},
+	}
+	// err := tasks.EnqueueTask(cfg.AmqpUrl, "ipfs.add", map[string]string{
+	// 	"url":              r.FormValue("url"),
+	// 	"ipfsApiServerUrl": cfg.IpfsApiUrl,
+	// })
+	if err := t.Enqueue(store, cfg.AmqpUrl); err != nil {
 		renderError(w, err)
 		return
 	}
@@ -110,60 +117,63 @@ func RunTaskHandler(w http.ResponseWriter, r *http.Request) {
 	renderMessage(w, "Now Running Task", "We've shipped your task off for execution, check back here in 12-24 hours to see status!")
 }
 
+// TODO - restore
 func CancelTaskHandler(w http.ResponseWriter, r *http.Request) {
-	t := &tasks.Task{
-		Id: r.URL.Path[len("/tasks/cancel/"):],
-	}
-	if err := t.Read(store); err != nil {
-		renderError(w, err)
-		return
-	}
+	// t := &tasks.Task{
+	// 	Id: r.URL.Path[len("/tasks/cancel/"):],
+	// }
+	// if err := t.Read(store); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
-	if err := t.Cancel(store); err != nil {
-		renderError(w, err)
-		return
-	}
+	// if err := t.Cancel(store); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
-	renderMessage(w, "Task Cancelled", "You've cancelled this task")
+	// renderMessage(w, "Task Cancelled", "You've cancelled this task")
 }
 
+// TODO - restore
 func TaskSuccessHandler(w http.ResponseWriter, r *http.Request) {
-	t := &tasks.Task{
-		Id: r.URL.Path[len("/tasks/success/"):],
-	}
-	if err := t.Read(store); err != nil {
-		renderError(w, err)
-		return
-	}
+	// t := &tasks.Task{
+	// 	Id: r.URL.Path[len("/tasks/success/"):],
+	// }
+	// if err := t.Read(store); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
-	if err := t.Cancel(store); err != nil {
-		renderError(w, err)
-		return
-	}
+	// if err := t.Cancel(store); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
-	renderMessage(w, "Task Completed", "We've marked this task as completed")
+	// renderMessage(w, "Task Completed", "We've marked this task as completed")
 }
 
+// TODO - restore
 func TaskFailHandler(w http.ResponseWriter, r *http.Request) {
-	t := &tasks.Task{
-		Id: r.URL.Path[len("/tasks/fail/"):],
-	}
-	if err := t.Read(store); err != nil {
-		renderError(w, err)
-		return
-	}
+	// t := &tasks.Task{
+	// 	Id: r.URL.Path[len("/tasks/fail/"):],
+	// }
+	// if err := t.Read(store); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
-	msg := r.FormValue("message")
-	if msg == "" {
-		msg = "Task Failed"
-	}
+	// msg := r.FormValue("message")
+	// if msg == "" {
+	// 	msg = "Task Failed"
+	// }
 
-	if err := t.Errored(store, msg); err != nil {
-		renderError(w, err)
-		return
-	}
+	// if err := t.Errored(store, msg); err != nil {
+	// 	renderError(w, err)
+	// 	return
+	// }
 
-	renderMessage(w, "Task Failed", "We've marked this task as failed. It can now be re-requested")
+	// renderMessage(w, "Task Failed", "We've marked this task as failed. It can now be re-requested")
 }
 
 // HealthCheckHandler is a basic "hey I'm fine" for load balancers & co
