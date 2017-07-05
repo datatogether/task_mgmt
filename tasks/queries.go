@@ -8,7 +8,7 @@ CREATE TABLE tasks (
   title            text NOT NULL DEFAULT '',
   user_id          text NOT NULL DEFAULT '',
   type             text NOT NULL DEFAULT '',
-  params           bytea,
+  params           json,
   status           text NOT NULL DEFAULT '',
   error            text NOT NULL DEFAULT '',
   enqueued         timestamp,
@@ -61,12 +61,12 @@ INSERT INTO tasks
   (id, created, updated, title, user_id, type,
    params, status, error, enqueued, started, succeeded, failed)
 VALUES
-  ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14);`
+  ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13);`
 
 const qTaskUpdate = `
 UPDATE tasks SET
-  created = $2, updated = $3, title = $4, user_id = $5, type $6,
-  params = $7, status = $7, error = $8, enqueued = $9, started = $10, succeeded = $11, failed = $12
+  created = $2, updated = $3, title = $4, user_id = $5, type = $6,
+  params = $7, status = $8, error = $9, enqueued = $10, started = $11, succeeded = $12, failed = $13
 WHERE id = $1;`
 
 const qTaskDelete = `DELETE FROM tasks WHERE id = $1;`

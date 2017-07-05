@@ -32,7 +32,7 @@ type Task struct {
 	// Status Message
 	Status string `json:"status,omitempty"`
 	// Error Message
-	Error error `json:"error,omitempty"`
+	Error string `json:"error,omitempty"`
 	// timstamp for when request was added to the tasks queue
 	// nil if request hasn't been sent to the queue
 	Enqueued *time.Time `json:"enqueued,omitempty"`
@@ -175,9 +175,16 @@ func (task *Task) Do(store datastore.Datastore) error {
 		task.Progress = &p
 
 		if p.Error != nil {
+			task.Error = p.Error.Error()
+			now := time.Now()
+			task.Failed = &now
+			go task.Save(store)
 			return p.Error
 		}
 		if p.Done {
+			now := time.Now()
+			task.Succeeded = &now
+			go task.Save(store)
 			return nil
 		}
 	}
@@ -314,9 +321,11 @@ func (t *Task) Save(store datastore.Datastore) (err error) {
 	}
 
 	var exists bool
-	exists, err = store.Has(t.Key())
-	if err != nil {
-		return err
+	if t.Id != "" {
+		exists, err = store.Has(t.Key())
+		if err != nil {
+			return err
+		}
 	}
 
 	if !exists {
@@ -361,8 +370,7 @@ func (t *Task) SQLQuery(cmd sql_datastore.Cmd) string {
 
 func (t *Task) UnmarshalSQL(row sqlutil.Scannable) error {
 	var (
-		id, title, userId, typ, status       string
-		e                                    error
+		id, title, userId, typ, status, e    string
 		paramBytes                           []byte
 		params                               map[string]interface{}
 		created, updated                     time.Time

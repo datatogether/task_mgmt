@@ -26,14 +26,12 @@ func ipfsAdd(w http.ResponseWriter, r *http.Request) {
 		Type: "ipfs.add",
 		Params: map[string]interface{}{
 			"url":              r.FormValue("url"),
-			"upfsApiServerUrl": cfg.IpfsApiUrl,
+			"ipfsApiServerUrl": cfg.IpfsApiUrl,
 		},
 	}
-	// err := tasks.EnqueueTask(cfg.AmqpUrl, "ipfs.add", map[string]string{
-	// 	"url":              r.FormValue("url"),
-	// 	"ipfsApiServerUrl": cfg.IpfsApiUrl,
-	// })
+
 	if err := t.Enqueue(store, cfg.AmqpUrl); err != nil {
+		log.Println(err)
 		renderError(w, err)
 		return
 	}

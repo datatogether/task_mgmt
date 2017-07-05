@@ -32,9 +32,6 @@ func (r TaskRequests) Enqueue(params *TasksEnqueueParams, task *Task) (err error
 		return err
 	}
 
-	// if err := EnqueueTask(t.Store, t.AmqpUrl, params.Type, params.Params); err != nil {
-	// 	return err
-	// }
 	*task = *t
 	return nil
 }
