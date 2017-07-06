@@ -12,8 +12,14 @@ import (
 	"time"
 )
 
-// Task represents the storable state of a task
-// TODO - this needs heavy generalization
+// Task represents the storable state of a task. Note this is not the "task" itself
+// (the function that will be called to do the actual work associated with a task)
+// but the state associated with performing a task.
+// Task holds the type of work to be done, parameters to configure the work
+// to be done, and the status of that work. different types of "work" are done by
+// implementing the Taskable interface specified in taskdef.go
+// lots of the methods on Task overlap with Taskable, this is on purpose, as Task
+// wraps phases of task completion to track the state of a task
 type Task struct {
 	// uuid identifier for task
 	Id string `json:"id"`
@@ -50,19 +56,24 @@ type Task struct {
 	Progress *Progress `json:"progress,omitempty"`
 }
 
+// DatastoreType is to fulfill the sql_datastore.Model interface
+// It distinguishes "Task" as a storable type. "Task" is not (yet) intended for
+// use outside of Datatogether servers.
 func (t Task) DatastoreType() string {
 	return "Task"
 }
 
+// GetId returns a task's cannoncial identifier
 func (t Task) GetId() string {
 	return t.Id
 }
 
+// Key is to fulfill the sql_datastore.Model interface
 func (t Task) Key() datastore.Key {
 	return datastore.NewKey(fmt.Sprintf("%s:%s", t.DatastoreType(), t.GetId()))
 }
 
-// QueueMsg formats the task as an amqp.Publishing message for enquing
+// QueueMsg formats the task as an amqp.Publishing message for adding to a queue
 func (t *Task) QueueMsg() (amqp.Publishing, error) {
 	body, err := json.Marshal(t.Params)
 	if err != nil {
@@ -86,6 +97,7 @@ func (task *Task) Enqueue(store datastore.Datastore, amqpurl string) error {
 		return err
 	}
 
+	// connect to queue server & submit task
 	conn, err := amqp.Dial(amqpurl)
 	if err != nil {
 		return fmt.Errorf("Failed to connect to RabbitMQ: %s", err.Error())
@@ -132,6 +144,7 @@ func (task *Task) Enqueue(store datastore.Datastore, amqpurl string) error {
 	return task.Save(store)
 }
 
+// TaskFromDelivery reads a task from store based on an amqp.Delivery message
 func TaskFromDelivery(store datastore.Datastore, msg amqp.Delivery) (*Task, error) {
 	t := &Task{Id: msg.CorrelationId}
 	if err := t.Read(store); err != nil {
@@ -140,6 +153,7 @@ func TaskFromDelivery(store datastore.Datastore, msg amqp.Delivery) (*Task, erro
 	return t, nil
 }
 
+// Do performs the
 func (task *Task) Do(store datastore.Datastore) error {
 	newTask := taskdefs[task.Type]
 	if newTask == nil {
@@ -192,43 +206,21 @@ func (task *Task) Do(store datastore.Datastore) error {
 	return nil
 }
 
-// func (t *Task) StatusString() string {
-// 	if t.Request == nil {
-// 		return "ready"
-// 	} else if t.Success != nil {
-// 		return "finished"
-// 	} else if t.Fail != nil {
-// 		return "failed"
-// 	} else {
-// 		return "running"
-// 	}
-// }
-
-// func (t *Task) NextActionUrl() (url string, err error) {
-// 	switch t.StatusString() {
-// 	case "ready":
-// 		return fmt.Sprintf("/tasks/run/%s", t.Id), nil
-// 	case "running":
-// 		return fmt.Sprintf("/tasks/cancel/%s", t.Id), nil
-// 	case "failed":
-// 		return fmt.Sprintf("/tasks/run/%s", t.Id), nil
-// 	default:
-// 		return "", fmt.Errorf("no next action")
-// 	}
-// }
-
-// func (t *Task) NextActionTitle() (title string, err error) {
-// 	switch t.StatusString() {
-// 	case "ready":
-// 		return "run", nil
-// 	case "running":
-// 		return "cancel", nil
-// 	case "failed":
-// 		return "re-run", nil
-// 	default:
-// 		return "", fmt.Errorf("no next action")
-// 	}
-// }
+// StatusString returns a string representation of the status
+// of a task based on the state of it's date stamps
+func (t *Task) StatusString() string {
+	if t.Enqueued == nil {
+		return "enquing"
+	} else if t.Enqueued != nil {
+		return "queued"
+	} else if t.Succeeded != nil {
+		return "finished"
+	} else if t.Failed != nil {
+		return "failed"
+	} else {
+		return "running"
+	}
+}
 
 func (t *Task) valid() error {
 	if taskdefs[t.Type] == nil {
@@ -253,49 +245,6 @@ func (t *Task) valid() error {
 
 	return nil
 }
-
-// Run marks the task as "running", this should probably not be called run
-// TODO - naming refactor / negotiate relationship between task que & task model
-// func (t *Task) Run(store datastore.Datastore) error {
-// 	now := time.Now()
-// 	t.Request = &now
-// 	t.Fail = nil
-// 	t.Success = nil
-
-// 	// if err := SendTaskRequestEmail(t); err != nil {
-// 	// 	return err
-// 	// }
-// 	return t.Save(store)
-// }
-
-// func (t *Task) Cancel(store datastore.Datastore) error {
-// 	now := time.Now()
-// 	t.Fail = &now
-// 	t.Success = nil
-// 	t.Message = "Task Cancelled"
-
-// 	// if err := SendTaskCancelEmail(t); err != nil {
-// 	// 	return err
-// 	// }
-
-// 	return t.Save(store)
-// }
-
-// func (t *Task) SetError(store datastore.Datastore, message string) error {
-// 	now := time.Now()
-// 	t.Failed = &now
-// 	t.Error = fmt.Errorf("%s", message)
-// 	return t.Save(store)
-// }
-
-// func (t *Task) Succeeded(store datastore.Datastore, url, hash string) error {
-// 	now := time.Now()
-// 	t.Success = &now
-// 	t.ResultUrl = url
-// 	t.ResultHash = hash
-// 	t.Message = ""
-// 	return t.Save(store)
-// }
 
 func (t *Task) Read(store datastore.Datastore) error {
 	if t.Id == "" {

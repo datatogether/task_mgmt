@@ -1,13 +1,25 @@
 package tasks
 
 import (
-	"database/sql"
 	"github.com/ipfs/go-datastore"
 )
 
-// Taskable anything that fits on a task queue
+// taskdefs is an internal registry of all types of tasks that can be performed.
+// in order for a task to be managed, it must first be added by calling RegisterTaskdef
+// with a function that produces new instances of taskable for marshalling params
+var taskdefs = map[string]NewTaskFunc{}
+
+// RegisterTaskdef registers a task type, must be called before a task can be used.
+func RegisterTaskdef(name string, f NewTaskFunc) {
+	taskdefs[name] = f
+}
+
+// Taskable anything that fits on a task queue, it is a type of "work"
+// that can be performed. Lots of things
 type Taskable interface {
 	// are these task params valid? return error if not
+	// this func will be called before adding the task to
+	// the queue, and won't be added on failure.
 	Valid() error
 	// Do the task, returning incremental progress updates
 	// it's expected that the func will send either
@@ -16,30 +28,15 @@ type Taskable interface {
 	Do(updates chan Progress)
 }
 
-// NewTaskFunc creates new tasks
+// NewTaskFunc is a function that creates new task instances
+// task-orchestrators use NewTaskFunc to create new Tasks, and then attempt
+// to json.Unmarshal params into the task definition
 type NewTaskFunc func() Taskable
 
-// Progress represents the current state of a task
-// tasks will be given a Progress channel to send updates
-type Progress struct {
-	Percent float32 `json:"percent"` // percent complete between 0.0 & 1.0
-	Step    int     `json:"step"`    // current Step
-	Steps   int     `json:"steps"`   // number of Steps in the task
-	Status  string  `json:"status"`  // status string that describes what is currently happening
-	Done    bool    `json:"done"`    // complete flag
-	Error   error   `json:"error"`   // error message
-}
-
-// SqlDbTaskable is a task that has a method for assigning
-// a datastore to the task
+// SqlDbTaskable is a task that has a method for assigning a datastore to the task.
+// If your task needs access to a datastore, implement DatastoreTaskable, task-orchestrators
+// will detect this method and call it to set the datastore before calling Taskable.Do
 type DatastoreTaskable interface {
 	Taskable
 	SetDatastore(ds datastore.Datastore)
-}
-
-// SqlDbTaskable is a task that has a method for assigning a
-// database connection to the task
-type SqlDbTaskable interface {
-	Taskable
-	SetSqlDB(db *sql.DB)
 }

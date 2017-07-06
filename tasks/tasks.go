@@ -8,17 +8,14 @@ import (
 	"github.com/ipfs/go-datastore/query"
 )
 
-var taskdefs = map[string]NewTaskFunc{}
-
-func RegisterTaskdef(name string, f NewTaskFunc) {
-	taskdefs[name] = f
-}
-
+// ReadTasks reads a list of tasks from store
 func ReadTasks(store datastore.Datastore, orderby string, limit, offset int) ([]*Task, error) {
 	q := query.Query{
 		Prefix: fmt.Sprintf("/%s", Task{}.DatastoreType()),
 		Limit:  limit,
 		Offset: offset,
+		// TODO - add native ordering support
+		// Orders: []query.Order{}
 	}
 
 	res, err := store.Query(q)
@@ -43,12 +40,6 @@ func ReadTasks(store datastore.Datastore, orderby string, limit, offset int) ([]
 	}
 
 	return tasks[:i], nil
-
-	// rows, err := db.Query(qTasks, orderby, limit, offset)
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// return unmarshalTasks(rows, limit)
 }
 
 // TODO - transfer to kiwix taskdef
