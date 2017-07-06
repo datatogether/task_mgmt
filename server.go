@@ -93,12 +93,15 @@ func main() {
 func NewServerRoutes() *http.ServeMux {
 	m := http.NewServeMux()
 	m.HandleFunc("/.well-known/acme-challenge/", CertbotHandler)
-	m.Handle("/", authMiddleware(HomeHandler))
-	m.Handle("/tasks/run/", authMiddleware(RunTaskHandler))
-	m.Handle("/tasks/cancel/", authMiddleware(CancelTaskHandler))
-	m.Handle("/tasks/success/", authMiddleware(TaskSuccessHandler))
-	m.Handle("/tasks/fail/", authMiddleware(TaskFailHandler))
-	m.HandleFunc("/ipfs/add", ipfsAdd)
+	m.Handle("/", middleware(NotFoundHandler))
+
+	m.Handle("/tasks", middleware(TasksHandler))
+	m.Handle("/tasks/", middleware(TaskHandler))
+	// TODO - restore this:
+	// m.Handle("/tasks/cancel/", middleware(CancelTaskHandler))
+
+	// Example of individual task routing:
+	m.HandleFunc("/ipfs/add", middleware(EnqueueIpfsAddHandler))
 
 	m.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
 	m.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
