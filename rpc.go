@@ -5,12 +5,15 @@ import (
 	"github.com/datatogether/task-mgmt/tasks"
 	"net"
 	"net/rpc"
+	"time"
 )
 
 // if cfg.RpcPort is specified listenRpc opens up a
 // Remote Procedure call listener to communicate with
 // other servers
-func listenRpc() error {
+func listenRpc() (err error) {
+	var ln net.Listener
+
 	if cfg.RpcPort == "" {
 		log.Infoln("no rpc port specified, rpc disabled")
 		return nil
@@ -29,10 +32,15 @@ func listenRpc() error {
 	// 	return err
 	// }
 
-	ln, err := net.Listen("tcp", fmt.Sprintf(":%s", cfg.RpcPort))
-	if err != nil {
-		log.Infof("listen on port %s error: %s", cfg.RpcPort, err)
-		return err
+	for i := 0; i < 1000; i++ {
+		ln, err = net.Listen("tcp", fmt.Sprintf(":%s", cfg.RpcPort))
+		if err != nil {
+			log.Infof("listen on port %s error: %s", cfg.RpcPort, err)
+			time.Sleep(time.Second)
+			continue
+		}
+
+		break
 	}
 
 	log.Infof("accepting RPC requests on port %s", cfg.RpcPort)

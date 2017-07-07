@@ -27,10 +27,14 @@ services:
       - RPC_PORT=4400
   ipfs:
     image: "ipfs/go-ipfs:latest"
+    networks:
+      - back-tier
     ports:
       - 5001:5001
   rabbitmq:
-    image: "rabbitmq/rabbitmq:latest"
+    image: "library/rabbitmq:latest"
+    networks:
+      - back-tier
     ports:
       - 5672:5672
   postgres:

@@ -4,9 +4,30 @@ Getting started:
 
 If you have docker, clone this repo & run `docker-compose up`.
 
+You should then be able to run the following:
+```shell
+  # this should respond with json, having an empty "data" array
+  http://localhost:8080/tasks
+
+  # this should respond with json, with meta.message : "task successfully enqueud"
+  http://localhost:8080/ipfs/add?url=https://i.redd.it/5kwih5n5i58z.jpg
+
+  # requesting this again should now show a task in the data array, including a "succeeded" timestamp:
+  http://localhost:8080/tasks
+
+  # congrats, you've put this url of a jpeg on ipfs: https://i.redd.it/5kwih5n5i58z.jpg
+  # view it here:
+  https://ipfs.io/ipfs/QmeDchVWNVxFcEvnbtBbio88UwrHSCqEAXpcj2gX3aufvv
+
+  # connect to your ipfs server here:
+  # click the "files" tab, and you'll see this hash: QmeDchVWNVxFcEvnbtBbio88UwrHSCqEAXpcj2gX3aufvv
+  # this means you have a local ipfs node serving the image we just processed
+  https://localhost:5001/webui
+```
+
 ## From a recent Pull Request:
 
-_TODO - make a proper readme_
+_TODO - make a proper readme, this is ripped from a recent Pull Request:_
 
 tasks are any kind of work that needs to get done, but specifically work that would take longer, than say, a web request/response cycle should take. An example of a task can be "put this url on IPFS". another might be "identify the filetype of these 30,000 files, putting the results in a database".
 

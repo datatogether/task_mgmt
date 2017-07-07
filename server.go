@@ -5,6 +5,7 @@ package main
 import (
 	"database/sql"
 	"fmt"
+	"github.com/archivers-space/sqlutil"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/source"
 	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
@@ -28,7 +29,7 @@ var (
 	log = logrus.New()
 
 	// application database connection
-	appDB *sql.DB
+	appDB = &sql.DB{}
 
 	// hoist default store
 	store = sql_datastore.DefaultStore
@@ -52,13 +53,7 @@ func main() {
 		panic(fmt.Errorf("server configuration error: %s", err.Error()))
 	}
 
-	connectToAppDb()
-	sql_datastore.SetDB(appDB)
-	store.Register(
-		&tasks.Task{},
-		&source.Source{},
-	)
-	// go update(appDB)
+	go initPostgres()
 	go listenRpc()
 
 	stop, err := acceptTasks()
@@ -105,4 +100,26 @@ func NewServerRoutes() *http.ServeMux {
 	m.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
 
 	return m
+}
+
+func initPostgres() {
+	log.Infoln("connecting to postgres db")
+	if err := sqlutil.ConnectToDb("postgres", cfg.PostgresDbUrl, appDB); err != nil {
+		panic(err)
+	}
+	log.Infoln("connecteded to postgres db")
+	created, err := sqlutil.EnsureTables(appDB, packagePath("sql/schema.sql"),
+		"tasks")
+	if err != nil {
+		log.Infoln(err)
+	}
+	if len(created) > 0 {
+		log.Infoln("created tables:", created)
+	}
+
+	sql_datastore.SetDB(appDB)
+	store.Register(
+		&tasks.Task{},
+		&source.Source{},
+	)
 }

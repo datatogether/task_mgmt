@@ -28,6 +28,9 @@ type config struct {
 	// port to listen on, will be read from PORT env variable if present.
 	Port string
 
+	// root url
+	UrlRoot string
+
 	// port to listen on for RPC calls
 	RpcPort string
 

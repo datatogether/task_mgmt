@@ -99,45 +99,6 @@ func ListTasksHandler(w http.ResponseWriter, r *http.Request) {
 	apiutil.WritePageResponse(w, ts, r, p)
 }
 
-// func HomeHandler(w http.ResponseWriter, r *http.Request) {
-// 	tsks, err := tasks.ReadTasks(store, "created DESC", 30, 0)
-// 	if err != nil {
-// 		log.Info(err.Error())
-// 		renderError(w, err)
-// 		return
-// 	}
-
-// 	perm := false
-// 	pValue := r.Context().Value("permission")
-// 	if pString, ok := pValue.(string); ok {
-// 		if pString == "admin" || pString == "write" {
-// 			perm = true
-// 		}
-// 	}
-
-// 	renderTemplate(w, "tasks.html", map[string]interface{}{
-// 		"writePerm": perm,
-// 		"tasks":     tsks,
-// 	})
-// }
-
-// func RunTaskHandler(w http.ResponseWriter, r *http.Request) {
-// 	t := &tasks.Task{
-// 		Id: r.URL.Path[len("/tasks/run/"):],
-// 	}
-// 	if err := t.Read(store); err != nil {
-// 		renderError(w, err)
-// 		return
-// 	}
-
-// 	// if err := t.Run(store); err != nil {
-// 	// 	renderError(w, err)
-// 	// 	return
-// 	// }
-
-// 	renderMessage(w, "Now Running Task", "We've shipped your task off for execution, check back here in 12-24 hours to see status!")
-// }
-
 // TODO - restore
 func CancelTaskHandler(w http.ResponseWriter, r *http.Request) {
 	// t := &tasks.Task{

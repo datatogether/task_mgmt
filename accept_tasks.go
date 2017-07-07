@@ -7,6 +7,7 @@ import (
 	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/streadway/amqp"
+	"time"
 )
 
 // taskdefs is a map of all possible task names to their respective "New" funcs
@@ -19,12 +20,25 @@ var taskdefs = map[string]tasks.NewTaskFunc{
 // it returns a stop channel writing to stop will teardown the
 // func and stop accepting tasks
 func acceptTasks() (stop chan bool, err error) {
-	stop = make(chan bool)
-
-	conn, err := amqp.Dial(cfg.AmqpUrl)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to connect to RabbitMQ: %s", err.Error())
+	if cfg.AmqpUrl == "" {
+		return nil, fmt.Errorf("no amqp url specified")
 	}
+
+	stop = make(chan bool)
+	log.Printf("connecting to: %s", cfg.AmqpUrl)
+
+	var conn *amqp.Connection
+	for i := 0; i <= 1000; i++ {
+		conn, err = amqp.Dial(cfg.AmqpUrl)
+		if err != nil {
+			log.Infof("Failed to connect to amqp server: %s", err.Error())
+			time.Sleep(time.Second)
+			continue
+		}
+		break
+	}
+
+	// TODO - handle connection still not existing
 
 	ch, err := conn.Channel()
 	if err != nil {

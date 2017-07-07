@@ -7,16 +7,15 @@ CREATE TABLE tasks (
   created          timestamp NOT NULL DEFAULT (now() at time zone 'utc'),
   updated          timestamp NOT NULL DEFAULT (now() at time zone 'utc'),
   title            text NOT NULL DEFAULT '',
-  request          timestamp,
-  success          timestamp,
-  fail             timestamp,
-  repo_url         text NOT NULL DEFAULT '',
-  repo_commit      text NOT NULL DEFAULT '',
-  source_url       text NOT NULL DEFAULT '',
-  source_checksum  text NOT NULL DEFAULT '',
-  result_url       text NOT NULL DEFAULT '',
-  result_hash      text NOT NULL DEFAULT '',
-  message          text NOT NULL DEFAULT ''
+  user_id          text NOT NULL DEFAULT '',
+  type             text NOT NULL DEFAULT '',
+  params           json,
+  status           text NOT NULL DEFAULT '',
+  error            text NOT NULL DEFAULT '',
+  enqueued         timestamp,
+  started          timestamp,
+  succeeded        timestamp,
+  failed           timestamp
 );
 
 -- name: create-sources
