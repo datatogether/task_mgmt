@@ -1,11 +1,7 @@
 package main
 
 import (
-	"context"
 	"crypto/tls"
-	"encoding/json"
-	"fmt"
-	"github.com/datatogether/api/apiutil"
 	"net/http"
 	"time"
 )
@@ -53,67 +49,68 @@ func middleware(handler http.HandlerFunc) http.HandlerFunc {
 // TODO - this is a carry-over from a former implementation of task-mgmt
 // that was specific to executing the kiwix zim task it should be shifted
 // over to some sort of permissions service
-func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		token := r.FormValue("access_token")
-		c, err := r.Cookie(cfg.UserCookieKey)
-		if err != nil {
-			log.Info(err.Error())
-		}
 
-		// we gots no login info, so login required
-		if c == nil && token == "" {
-			msg := fmt.Sprintf("github login required: %s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot)
-			apiutil.WriteMessageResponse(w, msg, nil)
-			return
-		}
+// func authMiddleware(handler http.HandlerFunc) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		token := r.FormValue("access_token")
+// 		c, err := r.Cookie(cfg.UserCookieKey)
+// 		if err != nil {
+// 			log.Info(err.Error())
+// 		}
 
-		req, err := http.NewRequest("GET", fmt.Sprintf("%s/session/oauth/github/repoaccess?access_token=%s&owner=%s&repo=%s", cfg.IdentityServerUrl, token, cfg.GithubRepoOwner, cfg.GithubRepoName), nil)
-		if err != nil {
-			log.Info(err.Error())
-			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("error contacting identity server: %s", err.Error()))
-			return
-		}
+// 		// we gots no login info, so login required
+// 		if c == nil && token == "" {
+// 			msg := fmt.Sprintf("github login required: %s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot)
+// 			apiutil.WriteMessageResponse(w, msg, nil)
+// 			return
+// 		}
 
-		req.AddCookie(c)
-		res, err := http.DefaultClient.Do(req)
-		if err != nil {
-			log.Info(err.Error())
-			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("error contacting identity server: %s", err.Error()))
-			return
-		}
-		defer res.Body.Close()
+// 		req, err := http.NewRequest("GET", fmt.Sprintf("%s/session/oauth/github/repoaccess?access_token=%s&owner=%s&repo=%s", cfg.IdentityServerUrl, token, cfg.GithubRepoOwner, cfg.GithubRepoName), nil)
+// 		if err != nil {
+// 			log.Info(err.Error())
+// 			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("error contacting identity server: %s", err.Error()))
+// 			return
+// 		}
 
-		data := map[string]interface{}{}
-		if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
-			log.Info(err.Error())
-			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("error contacting identity server: %s", err.Error()))
-			return
-		}
+// 		req.AddCookie(c)
+// 		res, err := http.DefaultClient.Do(req)
+// 		if err != nil {
+// 			log.Info(err.Error())
+// 			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("error contacting identity server: %s", err.Error()))
+// 			return
+// 		}
+// 		defer res.Body.Close()
 
-		// User Needs github added to their account
-		if res.StatusCode == http.StatusUnauthorized {
-			msg := fmt.Sprintf("github login required: %s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot)
-			apiutil.WriteMessageResponse(w, msg, nil)
-			return
-		} else if res.StatusCode != http.StatusOK {
-			log.Info(data["meta"].(map[string]interface{})["message"])
-			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("%s", data["meta"].(map[string]interface{})["message"]))
-			return
-		}
+// 		data := map[string]interface{}{}
+// 		if err := json.NewDecoder(res.Body).Decode(&data); err != nil {
+// 			log.Info(err.Error())
+// 			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("error contacting identity server: %s", err.Error()))
+// 			return
+// 		}
 
-		perm := data["data"].(map[string]interface{})["permission"]
-		if perm != "admin" && perm != "write" {
-			apiutil.WriteErrResponse(w, http.StatusUnauthorized, fmt.Errorf("access denied"))
-			return
-		}
+// 		// User Needs github added to their account
+// 		if res.StatusCode == http.StatusUnauthorized {
+// 			msg := fmt.Sprintf("github login required: %s/oauth/github?redirect=%s", cfg.IdentityServerUrl, cfg.UrlRoot)
+// 			apiutil.WriteMessageResponse(w, msg, nil)
+// 			return
+// 		} else if res.StatusCode != http.StatusOK {
+// 			log.Info(data["meta"].(map[string]interface{})["message"])
+// 			apiutil.WriteErrResponse(w, http.StatusInternalServerError, fmt.Errorf("%s", data["meta"].(map[string]interface{})["message"]))
+// 			return
+// 		}
 
-		ctx := context.WithValue(r.Context(), "permission", perm)
+// 		perm := data["data"].(map[string]interface{})["permission"]
+// 		if perm != "admin" && perm != "write" {
+// 			apiutil.WriteErrResponse(w, http.StatusUnauthorized, fmt.Errorf("access denied"))
+// 			return
+// 		}
 
-		// no-auth middware func
-		middleware(handler)(w, r.WithContext(ctx))
-	}
-}
+// 		ctx := context.WithValue(r.Context(), "permission", perm)
+
+// 		// no-auth middware func
+// 		middleware(handler)(w, r.WithContext(ctx))
+// 	}
+// }
 
 // addCORSHeaders adds CORS header info for whitelisted servers
 func addCORSHeaders(w http.ResponseWriter, r *http.Request) {

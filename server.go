@@ -1,7 +1,5 @@
-/*
-	Coverage is a service for mapping an archiving surface area, and tracking
-	the amount of that surface area that any number of archives have covered
-*/
+// Task Management manages tasks, including tracking the state of tasks as they move through a queue
+// As tasks are completed task-mgmt updates records of when tasks started, stopped, etc.
 package main
 
 import (

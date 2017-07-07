@@ -9,10 +9,11 @@ import (
 
 // TaskGithubAdd uses code hosted in a repository on github.com
 // to coordinate adding a specified url
+// TODO - Work in Progress.
 type TaskGithubAdd struct {
 	// url to where the code to execute lives
 	// example: https://github.com/ipfs/ipfs-wiki/mirror
-	RepoUrl string `json:"repoCommit"`
+	RepoUrl string `json:"repoUrl"`
 	// version control repoCommit to execute code from
 	RepoCommit string `json:"repoCommit"`
 	// url this code is to run against

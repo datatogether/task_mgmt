@@ -1,0 +1,42 @@
+version: '2'
+services:
+  task-mgmt:
+    build: .
+    volumes:
+      - .:/go/src/github.com/datatogether/task-mgmt
+      - ./sql:/sql
+    ports:
+     - 8080:8080
+    networks:
+      - back-tier
+    depends_on:
+      - ipfs
+      - rabbitmq
+      - postgres
+    environment:
+      - PORT=8080
+      - TLS=false
+      - GOLANG_ENV=develop
+      - POSTGRES_DB_URL=postgres://postgres@postgres/postgres?sslmode=disable
+      - PUBLIC_KEY=nothing_yet
+      - POSTMARK_KEY=POSTMARK_API_TEST
+      - EMAIL_NOTIFICATION_RECIPIENTS=brendan@qri.io
+      - GITHUB_LOGIN_URL=http://localhost:3100/oauth/github
+      - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
+      - IPFS_API_URL=http://ipfs:5001/api/v0
+      - RPC_PORT=4400
+  ipfs:
+    image: "ipfs/go-ipfs:latest"
+    ports:
+      - 5001:5001
+  rabbitmq:
+    image: "rabbitmq/rabbitmq:latest"
+    ports:
+      - 5672:5672
+  postgres:
+    image: "postgres:9.6-alpine"
+    networks:
+      - back-tier
+
+networks:
+  back-tier:

@@ -25,14 +25,8 @@ const (
 //
 // configuration is read at startup and cannot be alterd without restarting the server.
 type config struct {
-	// site title
-	Title string
-
 	// port to listen on, will be read from PORT env variable if present.
 	Port string
-
-	// root url for service
-	UrlRoot string
 
 	// port to listen on for RPC calls
 	RpcPort string
@@ -61,17 +55,19 @@ type config struct {
 	// list of email addresses that should get notifications
 	EmailNotificationRecipients []string
 
-	// url to kick off github oauth process
-	GithubLoginUrl string
-	// owner of github repo. required
-	GithubRepoOwner string
-	// name of github repo. required.
-	GithubRepoName string
+	// TODO - depricate github config & identity info now that task-mgmt
+	// is a backend service
 
+	// url to kick off github oauth process
+	// GithubLoginUrl string
+	// owner of github repo. required
+	// GithubRepoOwner string
+	// name of github repo. required.
+	// GithubRepoName string
 	// location of identity server
-	IdentityServerUrl string
+	// IdentityServerUrl string
 	// cookie to check for user credentials to forward to identity server.
-	UserCookieKey string
+	// UserCookieKey string
 
 	// CertbotResponse is only for doing manual SSL certificate generation via LetsEncrypt.
 	CertbotResponse string
@@ -98,11 +94,8 @@ func initConfig(mode string) (cfg *config, err error) {
 	}
 
 	err = requireConfigStrings(map[string]string{
-		"PORT":                cfg.Port,
-		"POSTGRES_DB_URL":     cfg.PostgresDbUrl,
-		"GITHUB_REPO_OWNER":   cfg.GithubRepoOwner,
-		"GITHUB_REPO_NAME":    cfg.GithubRepoName,
-		"IDENTITY_SERVER_URL": cfg.IdentityServerUrl,
+		"PORT":            cfg.Port,
+		"POSTGRES_DB_URL": cfg.PostgresDbUrl,
 	})
 
 	return
