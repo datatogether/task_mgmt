@@ -7,10 +7,12 @@ import (
 
 func TestReadTasks(t *testing.T) {
 	egs := []*Task{
-		&Task{Title: "a"},
-		&Task{Title: "b"},
-		&Task{Title: "c"},
+		&Task{Title: "a", Type: "test"},
+		&Task{Title: "b", Type: "test"},
+		&Task{Title: "c", Type: "test"},
 	}
+
+	RegisterTaskdef("test", NewExampleTask)
 
 	store := datastore.NewMapDatastore()
 	for _, tsk := range egs {

@@ -101,6 +101,11 @@ func initConfig(mode string) (cfg *config, err error) {
 		"POSTGRES_DB_URL": cfg.PostgresDbUrl,
 	})
 
+	// output to stdout in dev mode
+	if mode == DEVELOP_MODE {
+		log.Out = os.Stdout
+	}
+
 	return
 }
 

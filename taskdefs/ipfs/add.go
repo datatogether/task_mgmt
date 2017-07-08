@@ -11,22 +11,27 @@ import (
 	"path/filepath"
 )
 
+// Should be set by implementers
+var IpfsApiServerUrl = ""
+
 type TaskAdd struct {
 	Url              string `json:"url"`              // url to resource to be added
 	Checksum         string `json:"checksum"`         // optional checksum to check resp against
-	IpfsApiServerUrl string `json:"ipfsApiServerUrl"` // url of IPFS api server
+	ipfsApiServerUrl string `json:"ipfsApiServerUrl"` // url of IPFS api server
 }
 
 func NewTaskAdd() tasks.Taskable {
-	return &TaskAdd{}
+	return &TaskAdd{
+		ipfsApiServerUrl: IpfsApiServerUrl,
+	}
 }
 
 func (t *TaskAdd) Valid() error {
 	if t.Url == "" {
 		return fmt.Errorf("url param is required")
 	}
-	if t.IpfsApiServerUrl == "" {
-		return fmt.Errorf("no ipfs server url provided")
+	if t.ipfsApiServerUrl == "" {
+		return fmt.Errorf("no ipfs server url provided, please configure the ipfs tasks package")
 	}
 	return nil
 }
@@ -101,7 +106,7 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 	p.Step++
 	pch <- p
 
-	req, err := http.NewRequest("POST", fmt.Sprintf("%s/add", t.IpfsApiServerUrl), body)
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/add", t.ipfsApiServerUrl), body)
 	if err != nil {
 		p.Error = fmt.Errorf("error creating request: %s", err.Error())
 		pch <- p

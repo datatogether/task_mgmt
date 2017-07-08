@@ -10,10 +10,12 @@ import (
 	"time"
 )
 
-// taskdefs is a map of all possible task names to their respective "New" funcs
-var taskdefs = map[string]tasks.NewTaskFunc{
-	"ipfs.add":            ipfs.NewTaskAdd,
-	"kiwix.updateSources": kiwix.NewTaskUpdateSources,
+func configureTasks() {
+	tasks.RegisterTaskdef("ipfs.add", ipfs.NewTaskAdd)
+	tasks.RegisterTaskdef("kiwix.updateSources", kiwix.NewTaskUpdateSources)
+
+	// Must set api server url to make ipfs tasks work
+	ipfs.IpfsApiServerUrl = cfg.IpfsApiUrl
 }
 
 // start accepting tasks from the queue, if setup doesn't error,
@@ -38,7 +40,10 @@ func acceptTasks() (stop chan bool, err error) {
 		break
 	}
 
-	// TODO - handle connection still not existing
+	// if the connection is still nil after 1000 tries, time to bail
+	if conn == nil {
+		return nil, fmt.Errorf("Failed to connect to amqp server")
+	}
 
 	ch, err := conn.Channel()
 	if err != nil {
@@ -101,12 +106,11 @@ func acceptTasks() (stop chan bool, err error) {
 
 // DoTask performs the designated task
 func DoTask(msg amqp.Delivery) error {
-	newTask := taskdefs[msg.Type]
-	if newTask == nil {
+	task, err := tasks.NewTaskable(msg.Type)
+	if err != nil {
 		return fmt.Errorf("unknown task type: %s", msg.Type)
 	}
 
-	task := newTask()
 	if err := json.Unmarshal(msg.Body, task); err != nil {
 		return fmt.Errorf("error decoding task body json: %s", err.Error())
 	}

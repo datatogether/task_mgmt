@@ -8,7 +8,6 @@ import (
 	"github.com/archivers-space/sqlutil"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/source"
-	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/sirupsen/logrus"
 	"net/http"
@@ -41,8 +40,6 @@ func init() {
 	log.Formatter = &logrus.TextFormatter{
 		ForceColors: true,
 	}
-
-	tasks.RegisterTaskdef("ipfs.add", ipfs.NewTaskAdd)
 }
 
 func main() {
@@ -52,6 +49,7 @@ func main() {
 		// panic if the server is missing a vital configuration detail
 		panic(fmt.Errorf("server configuration error: %s", err.Error()))
 	}
+	configureTasks()
 
 	go initPostgres()
 	go listenRpc()
