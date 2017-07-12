@@ -1,18 +1,46 @@
 # Task Management
 
-This is a [pilot project in collaboration with IPFS](https://github.com/ipfs/distributed-wikipedia-mirror/issues/8) to assist initiating & tracking mirroring kiwix wikipedia dumps onto IPFS by way of excuting shell scripts.
+Getting started:
 
-Currently this project periodically checks a subset of [kiwix wikipedia downloads](http://wiki.kiwix.org/wiki/Content_in_all_languages) and [ipfs/distributed-wikipedia-mirror](https://github.com/ipfs/distributed-wikipedia-mirror) for changes. If the repo master changes or any specified project's md5 checksum changes, this server will generate a "task" that qualified users will be able to set into action. Users are qualified by connecting their github account to the archivers.space identity management server. Permission to initiate tasks are determined by weather the user has either `admin` or `write` access to the `ipfs/distributed-wikipedia-mirror` repository. When a qualified user hits `run` on a task, an email is sent to a specified set of recipients, who will receive links to follow when the migration either succeeds or fails (again, requiring qualified access). This email process is a temporary stopgap while we work out a fully automated pipeline for executing & tracking tasks.
+If you have docker, clone this repo & run `docker-compose up`.
 
-### Roadmap:
-* [x] Uh, Tests.
-* [ ] Golint & general Cleanup
-* [ ] Connect tasks to a que
-* [ ] Automate task execution from the end of that que
-* [ ] Repurpose email to only handle IPNS repoints, notifications
-* [ ] Connect resulting IPFS hash & IPNS url to success handler
-* [ ] Refactor & generalize, abstracting kiwix-specific state tracking to... somewhere else.
-* [ ] Commit results of tasks back to the repository, updating `snapshot-hashes.yml`
-* [ ] Allow users to manage which kiwix projects should be injested
-* [ ] UI Cleanup
-* [ ] Open up public display of task que, only presenting action buttons to qualified users.
+You should then be able to run the following:
+```shell
+  # this should respond with json, having an empty "data" array
+  http://localhost:8080/tasks
+
+  # this should respond with json, with meta.message : "task successfully enqueud"
+  http://localhost:8080/ipfs/add?url=https://i.redd.it/5kwih5n5i58z.jpg
+
+  # requesting this again should now show a task in the data array, including a "succeeded" timestamp:
+  http://localhost:8080/tasks
+
+  # congrats, you've put this url of a jpeg on ipfs: https://i.redd.it/5kwih5n5i58z.jpg
+  # view it here:
+  https://ipfs.io/ipfs/QmeDchVWNVxFcEvnbtBbio88UwrHSCqEAXpcj2gX3aufvv
+
+  # connect to your ipfs server here:
+  # click the "files" tab, and you'll see this hash: QmeDchVWNVxFcEvnbtBbio88UwrHSCqEAXpcj2gX3aufvv
+  # this means you have a local ipfs node serving the image we just processed
+  https://localhost:5001/webui
+```
+
+## From a recent Pull Request:
+
+_TODO - make a proper readme, this is ripped from a recent Pull Request:_
+
+tasks are any kind of work that needs to get done, but specifically work that would take longer, than say, a web request/response cycle should take. An example of a task can be "put this url on IPFS". another might be "identify the filetype of these 30,000 files, putting the results in a database".
+
+Because this work will take anywhere from milliseconds to days, and may require special things to do that work, it makes sense to put those tasks in a queue, which is just a giant, rolling list of things to do, and have different services be able to add tasks to the queue, and sign up to do tasks as they hit the queue. This PR introduces a first-in-first-out (FIFO) queue to start with, meaning the first thing to get added is the first thing to get pulled off a list.
+
+The queue itself is a server, specifically a rabbitmq sever, it's open source, and based on the open amqp protocol. This means that things that work with the queue don't necessarily need to be written in go. More on that in the future.
+
+The task-mgmt service does just what it says on the tin. It's main job is to manage not just tasks, but the state of tasks as they move through the queue, questions like "what tasks are currently running?" are handled with this PR. As tasks are completed task-mgmt updates records of when tasks started, stopped, etc.
+
+this PR removes all user interfaces and instead introduces both a JSON api and an remote procedure call (RPC) api, the RPC api will be used to fold all of task-mgmt into the greater datatogether api. I know, that's the word api a million times, basically this means we'll have a PR on the datatogether/api to expose tasks so that outside users will access tasks the same way they access, say, coverage, or users. Only internal services will need to use the task-mgmt JSON api as a way of talking across languages.
+
+All of these changes turn the task-mgmt server into a backend service, so that we can fold all task stuff into the existing frontend. This means once the UI is written you'll be able to view, create, and track the progress of tasks from the standard webapp. PR on datatogether/context to follow.
+
+Along with tracking tasks, task-mgmt both add to and reads from the queue. This might seem strange, but it makes for a more simple starting point. Later on down the road lots of different services may be registered to accept tasks from the queue, at which point we can transition task-mgmt to a role of just adding to the queue and tracking progress.
+
+But most importantly of all, this PR also introduces a new subpackage task-mgmt/tasks which outlines the initial interface for a task definition, which is the platform on which tasks can be extended to all sorts of things. Getting this interface right is going to take some time, so I'd like to take some time to write an initial round of task-types, and then re-evaluate the interface.

@@ -28,6 +28,7 @@ VALUES
 DELETE FROM tasks;
 -- name: insert-tasks
 INSERT INTO tasks
-  (id, created, updated, title, request, success, fail, repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message)
+  (id, created, updated, title, user_id, type, params, status, error, enqueued, started, succeeded, failed)
+  -- (id, created, updated, title, request, success, fail, repo_url, repo_commit, source_url, source_checksum, result_url, result_hash, message)
 VALUES
-  ('57220705-4954-4a42-9e02-e6aa53b6908e', '2017-01-01 00:00:01', '2017-01-01 00:00:01', '', null, null, null, 'https://github.com/ipfs/distributed-wikipedia-mirror', '1dd318d678fd5496e5c93ad15aecb16dc128d36d', 'http://download.kiwix.org/zim/wikipedia_ab_all.zim', 'cefb808c89d55a1085966efc47df3d38', '', '', '');
+  ('57220705-4954-4a42-9e02-e6aa53b6908e', '2017-01-01 00:00:01', '2017-01-01 00:00:01', 'Add a url to IPFS', '', 'ipfs.add', null, '', '', null, null, null,null);

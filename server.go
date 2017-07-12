@@ -1,12 +1,14 @@
-/*
-	Coverage is a service for mapping an archiving surface area, and tracking
-	the amount of that surface area that any number of archives have covered
-*/
+// Task Management manages tasks, including tracking the state of tasks as they move through a queue
+// As tasks are completed task-mgmt updates records of when tasks started, stopped, etc.
 package main
 
 import (
 	"database/sql"
 	"fmt"
+	"github.com/archivers-space/sqlutil"
+	"github.com/datatogether/sql_datastore"
+	"github.com/datatogether/task-mgmt/source"
+	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
@@ -26,7 +28,10 @@ var (
 	log = logrus.New()
 
 	// application database connection
-	appDB *sql.DB
+	appDB = &sql.DB{}
+
+	// hoist default store
+	store = sql_datastore.DefaultStore
 )
 
 func init() {
@@ -44,9 +49,10 @@ func main() {
 		// panic if the server is missing a vital configuration detail
 		panic(fmt.Errorf("server configuration error: %s", err.Error()))
 	}
+	configureTasks()
 
-	connectToAppDb()
-	// go update(appDB)
+	go initPostgres()
+	go listenRpc()
 
 	stop, err := acceptTasks()
 	if err != nil {
@@ -67,7 +73,9 @@ func main() {
 	// return unless there's an error
 	log.Fatal(StartServer(cfg, s))
 
-	// lol will never happen
+	// lol will never happen, left here as a reminder
+	// that we should be able to stop accepting new tasks
+	// at any point without issue
 	stop <- true
 }
 
@@ -76,15 +84,40 @@ func main() {
 func NewServerRoutes() *http.ServeMux {
 	m := http.NewServeMux()
 	m.HandleFunc("/.well-known/acme-challenge/", CertbotHandler)
-	m.Handle("/", authMiddleware(HomeHandler))
-	m.Handle("/tasks/run/", authMiddleware(RunTaskHandler))
-	m.Handle("/tasks/cancel/", authMiddleware(CancelTaskHandler))
-	m.Handle("/tasks/success/", authMiddleware(TaskSuccessHandler))
-	m.Handle("/tasks/fail/", authMiddleware(TaskFailHandler))
-	m.HandleFunc("/ipfs/add", ipfsAdd)
+	m.Handle("/", middleware(NotFoundHandler))
+
+	m.Handle("/tasks", middleware(TasksHandler))
+	m.Handle("/tasks/", middleware(TaskHandler))
+	// TODO - restore this:
+	// m.Handle("/tasks/cancel/", middleware(CancelTaskHandler))
+
+	// Example of individual task routing:
+	m.HandleFunc("/ipfs/add", middleware(EnqueueIpfsAddHandler))
 
 	m.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("public/js"))))
 	m.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("public/css"))))
 
 	return m
+}
+
+func initPostgres() {
+	log.Infoln("connecting to postgres db")
+	if err := sqlutil.ConnectToDb("postgres", cfg.PostgresDbUrl, appDB); err != nil {
+		panic(err)
+	}
+	log.Infoln("connecteded to postgres db")
+	created, err := sqlutil.EnsureTables(appDB, packagePath("sql/schema.sql"),
+		"tasks")
+	if err != nil {
+		log.Infoln(err)
+	}
+	if len(created) > 0 {
+		log.Infoln("created tables:", created)
+	}
+
+	sql_datastore.SetDB(appDB)
+	store.Register(
+		&tasks.Task{},
+		&source.Source{},
+	)
 }
