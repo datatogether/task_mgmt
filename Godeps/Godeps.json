@@ -155,6 +155,10 @@
 			"Rev": "7ba76f1cb137b1b862c4ac2c2a78e84ff4e429ac"
 		},
 		{
+			"ImportPath": "github.com/datatogether/cdxj",
+			"Rev": "745f50276f9f88651ac5599713b70a3404951f1f"
+		},
+		{
 			"ImportPath": "github.com/datatogether/config",
 			"Rev": "29c751f56a84b6f95cb5187f6e7363f7cbcd2796"
 		},
