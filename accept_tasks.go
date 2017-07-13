@@ -11,7 +11,8 @@ import (
 )
 
 func configureTasks() {
-	tasks.RegisterTaskdef("ipfs.add", ipfs.NewTaskAdd)
+	tasks.RegisterTaskdef("ipfs.addurl", ipfs.NewTaskAdd)
+	tasks.RegisterTaskdef("ipfs.addcollection", ipfs.NewAddCollection)
 	tasks.RegisterTaskdef("kiwix.updateSources", kiwix.NewTaskUpdateSources)
 
 	// Must set api server url to make ipfs tasks work
