@@ -24,6 +24,7 @@ services:
       - GITHUB_LOGIN_URL=http://localhost:3100/oauth/github
       - AMQP_URL=amqp://guest:guest@rabbitmq:5672/
       - IPFS_API_URL=http://ipfs:5001/api/v0
+      - REDIS_URL=redis://redis:6379
       - RPC_PORT=4400
   ipfs:
     image: "ipfs/go-ipfs:latest"
@@ -37,6 +38,12 @@ services:
       - back-tier
     ports:
       - 5672:5672
+  redis:
+    image: "library/redis:alpine"
+    networks:
+      - back-tier
+    ports:
+      - 6379:6379
   postgres:
     image: "postgres:9.6-alpine"
     networks:

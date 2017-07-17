@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
 	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
@@ -86,7 +85,19 @@ func acceptTasks() (stop chan bool, err error) {
 				continue
 			}
 
-			if err := task.Do(store); err != nil {
+			tc := make(chan *tasks.Task, 10)
+
+			// accept tasks
+			go func() {
+				for t := range tc {
+					log.Infoln("publishing progress for task: %s", t.Id)
+					if err := PublishTaskProgress(rpool, t); err != nil {
+						log.Infoln(err.Error())
+					}
+				}
+			}()
+
+			if err := task.Do(store, tc); err != nil {
 				log.Errorf("task error: %s", err.Error())
 				msg.Nack(false, false)
 			} else {
@@ -103,43 +114,4 @@ func acceptTasks() (stop chan bool, err error) {
 	}()
 
 	return stop, nil
-}
-
-// DoTask performs the designated task
-func DoTask(msg amqp.Delivery) error {
-	task, err := tasks.NewTaskable(msg.Type)
-	if err != nil {
-		return fmt.Errorf("unknown task type: %s", msg.Type)
-	}
-
-	if err := json.Unmarshal(msg.Body, task); err != nil {
-		return fmt.Errorf("error decoding task body json: %s", err.Error())
-	}
-
-	// If the task supports the DatastoreTask interface,
-	// pass in our host db connection
-	if dsT, ok := task.(tasks.DatastoreTaskable); ok {
-		dsT.SetDatastore(store)
-	}
-
-	// created buffered progress updates channel
-	pc := make(chan tasks.Progress, 10)
-
-	// execute the task in a goroutine
-	go task.Do(pc)
-
-	for p := range pc {
-		// TODO - log progress and pipe out of this func
-		// so others can listen in for updates
-		// log.Printf("")
-
-		if p.Error != nil {
-			return p.Error
-		}
-		if p.Done {
-			return nil
-		}
-	}
-
-	return nil
 }

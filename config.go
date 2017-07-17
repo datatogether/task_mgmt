@@ -43,6 +43,9 @@ type config struct {
 	// url for IPFS api methods
 	IpfsApiUrl string
 
+	// redis connection URL
+	RedisUrl string
+
 	// Public Key to use for signing. required.
 	PublicKey string
 

@@ -179,6 +179,16 @@
 			"Rev": "8fbf96f6a6d174f815ac77c47daf1c0fb1e4cfdb"
 		},
 		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Comment": "v1.1.0-7-g9f3a011",
+			"Rev": "9f3a0116c9f72c5a56f958206a43dc881b502c37"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Comment": "v1.1.0-7-g9f3a011",
+			"Rev": "9f3a0116c9f72c5a56f958206a43dc881b502c37"
+		},
+		{
 			"ImportPath": "github.com/gchaincl/dotsql",
 			"Comment": "v0.1.0-10-g450d80a",
 			"Rev": "450d80a4d8f8cdd41842a1a3fe9ace90089c5e47"
