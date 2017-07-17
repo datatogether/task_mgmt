@@ -53,6 +53,7 @@ func main() {
 
 	go initPostgres()
 	go listenRpc()
+	go connectRedis()
 
 	stop, err := acceptTasks()
 	if err != nil {
