@@ -85,19 +85,19 @@ func acceptTasks() (stop chan bool, err error) {
 				continue
 			}
 
-			pch := make(chan tasks.Progress, 10)
+			tc := make(chan *tasks.Task, 10)
 
 			// accept tasks
 			go func() {
-				for {
-					p := <-pch
-					if err := PublishProgress(rconn, p); err != nil {
+				for t := range tc {
+					log.Infoln("publishing progress for task: %s", t.Id)
+					if err := PublishTaskProgress(rpool, t); err != nil {
 						log.Infoln(err.Error())
 					}
 				}
 			}()
 
-			if err := task.Do(store, pch); err != nil {
+			if err := task.Do(store, tc); err != nil {
 				log.Errorf("task error: %s", err.Error())
 				msg.Nack(false, false)
 			} else {
