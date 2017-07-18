@@ -10,6 +10,8 @@ import (
 // Main redis connection
 var rpool *redis.Pool
 
+var ErrNoRedisConn = fmt.Errorf("No connection to redis could be found")
+
 func connectRedis() (err error) {
 	// var netConn net.Conn
 
@@ -43,6 +45,10 @@ func connectRedis() (err error) {
 }
 
 func PublishTaskProgress(pool *redis.Pool, t *tasks.Task) error {
+	if pool == nil {
+		return ErrNoRedisConn
+	}
+
 	c := pool.Get()
 	defer c.Close()
 

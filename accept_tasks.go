@@ -90,8 +90,7 @@ func acceptTasks() (stop chan bool, err error) {
 			// accept tasks
 			go func() {
 				for t := range tc {
-					log.Infoln("publishing progress for task: %s", t.Id)
-					if err := PublishTaskProgress(rpool, t); err != nil {
+					if err := PublishTaskProgress(rpool, t); err != nil && err != ErrNoRedisConn {
 						log.Infoln(err.Error())
 					}
 				}
@@ -101,7 +100,7 @@ func acceptTasks() (stop chan bool, err error) {
 				log.Errorf("task error: %s", err.Error())
 				msg.Nack(false, false)
 			} else {
-				log.Infof("completed task: %s, %s", msg.MessageId, msg.Type)
+				log.Infof("completed task: %s, %s", task.Id, msg.Type)
 				msg.Ack(false)
 			}
 
