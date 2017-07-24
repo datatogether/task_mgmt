@@ -36,7 +36,11 @@ func (t *AddCollection) SetDatastore(store datastore.Datastore) {
 	if sqlds, ok := store.(*sql_datastore.Datastore); ok {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
-		sqlds.Register(&archive.Collection{})
+		sqlds.Register(
+			&archive.Url{},
+			&archive.Collection{},
+			&archive.CollectionItem{},
+		)
 	}
 
 	t.store = store
@@ -81,7 +85,7 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 	for i := 0; i <= pageCount; i++ {
 		items, err := collection.ReadItems(t.store, "created DESC", pageSize, i*pageSize)
 		if err != nil {
-			p.Error = fmt.Errorf("Error reading items page index %d of %d", i, pageCount)
+			p.Error = fmt.Errorf("Error reading items page index %d/%d: %s", i, pageCount, err.Error())
 			pch <- p
 			return
 		}
