@@ -12,6 +12,8 @@ import (
 	"time"
 )
 
+const pageSize = 100
+
 // AddCollection injests a a collection to IPFS,
 // it iterates through each setting hashes on collection urls
 // and, eventually, generates a cdxj index of the archive
@@ -52,7 +54,7 @@ func (t *AddCollection) Valid() error {
 
 func (t *AddCollection) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "loading collection"}
-	// 1. Get the Collection
+	// 1. Get the Collection & Item Count
 	pch <- p
 
 	collection := &archive.Collection{Id: t.CollectionId}
@@ -63,66 +65,83 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 	}
 	p.Step++
 
-	pctAdd := 1.0 / float32(len(collection.Contents))
+	count, err := collection.ItemCount(t.store)
+	if err != nil {
+		p.Error = fmt.Errorf("Error reading collection item count: %s", err.Error())
+		pch <- p
+		return
+	}
+
+	pctAdd := 1.0 / float32(count)
 
 	indexBuf := bytes.NewBuffer(nil)
 	index := cdxj.NewWriter(indexBuf)
 
-	// TODO - parallelize a lil bit
-	for i, c := range collection.Contents {
-		// TODO - parse this from schema
-		urlstr := c[1]
-
-		p.Status = fmt.Sprintf("archiving url %d/%d", i+1, len(collection.Contents))
-		p.Percent += pctAdd
-		pch <- p
-
-		// TODO - get the actual start time from header WARC Record
-		start := time.Now()
-		header, body, err := GetUrlBytes(urlstr)
+	pageCount := count / pageSize
+	for i := 0; i <= pageCount; i++ {
+		items, err := collection.ReadItems(t.store, "created DESC", pageSize, i*pageSize)
 		if err != nil {
-			p.Error = fmt.Errorf("Error getting url: %s: %s", urlstr, err.Error())
+			p.Error = fmt.Errorf("Error reading items page index %d of %d", i, pageCount)
 			pch <- p
 			return
 		}
 
-		// run checksum?
-		// if t.Checksum != "" {
-		// 	pch <- p
-		// 	// TODO - run checksum
-		// }
+		// TODO - parallelize a lil bit
+		for _, item := range items {
+			// TODO - parse this from schema
+			urlstr := item.Url.Url
 
-		headerhash, err := WriteToIpfs(t.ipfsApiServerUrl, filepath.Base(urlstr), header)
-		if err != nil {
-			p.Error = fmt.Errorf("Error writing %s header to ipfs: %s", filepath.Base(urlstr), err.Error())
+			p.Status = fmt.Sprintf("archiving url %d/%d", i+1, count)
+			p.Percent += pctAdd
 			pch <- p
-			return
-		}
 
-		bodyhash, err := WriteToIpfs(t.ipfsApiServerUrl, filepath.Base(urlstr), body)
-		if err != nil {
-			p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
-			pch <- p
-			return
-		}
+			// TODO - get the actual start time from header WARC Record
+			start := time.Now()
+			header, body, err := GetUrlBytes(urlstr)
+			if err != nil {
+				p.Error = fmt.Errorf("Error getting url: %s: %s", urlstr, err.Error())
+				pch <- p
+				return
+			}
 
-		// set hash for collection
-		c[0] = bodyhash
+			headerhash, err := WriteToIpfs(t.ipfsApiServerUrl, filepath.Base(urlstr), header)
+			if err != nil {
+				p.Error = fmt.Errorf("Error writing %s header to ipfs: %s", filepath.Base(urlstr), err.Error())
+				pch <- p
+				return
+			}
 
-		// TODO - demo content for now, this is going to need lots of refinement
-		indexRec := &cdxj.Record{
-			Uri:        urlstr,
-			Timestamp:  start,
-			RecordType: "", // TODO set record type?
-			JSON: map[string]interface{}{
-				"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerhash, bodyhash),
-			},
-		}
+			bodyhash, err := WriteToIpfs(t.ipfsApiServerUrl, filepath.Base(urlstr), body)
+			if err != nil {
+				p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
+				pch <- p
+				return
+			}
 
-		if err := index.Write(indexRec); err != nil {
-			p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
-			pch <- p
-			return
+			// set hash for collection
+			item.Url.Hash = bodyhash
+
+			// TODO - demo content for now, this is going to need lots of refinement
+			indexRec := &cdxj.Record{
+				Uri:        urlstr,
+				Timestamp:  start,
+				RecordType: "", // TODO set record type?
+				JSON: map[string]interface{}{
+					"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerhash, bodyhash),
+				},
+			}
+
+			if err := index.Write(indexRec); err != nil {
+				p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
+				pch <- p
+				return
+			}
+
+			if err := item.Save(t.store); err != nil {
+				p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
+				pch <- p
+				return
+			}
 		}
 	}
 

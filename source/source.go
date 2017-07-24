@@ -89,8 +89,8 @@ func (s *Source) Delete(store datastore.Datastore) error {
 	return store.Delete(s.Key())
 }
 
-func (s *Source) NewSQLModel(id string) sql_datastore.Model {
-	return &Source{Id: id}
+func (s *Source) NewSQLModel(key datastore.Key) sql_datastore.Model {
+	return &Source{Id: key.Name()}
 }
 
 func (s *Source) SQLQuery(cmd sql_datastore.Cmd) string {
