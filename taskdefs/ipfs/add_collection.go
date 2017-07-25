@@ -91,11 +91,11 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 		}
 
 		// TODO - parallelize a lil bit
-		for _, item := range items {
+		for j, item := range items {
 			// TODO - parse this from schema
 			urlstr := item.Url.Url
 
-			p.Status = fmt.Sprintf("archiving url %d/%d", i+1, count)
+			p.Status = fmt.Sprintf("archiving url %d/%d", (i*pageSize)+j+1, count)
 			p.Percent += pctAdd
 			pch <- p
 

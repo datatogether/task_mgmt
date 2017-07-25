@@ -31,7 +31,11 @@ func GetUrlBytes(urlstr string) (request, response []byte, err error) {
 	req.Write(buf)
 	request = buf.Bytes()
 
-	res, err := http.Get(urlstr)
+	cli := http.Client{
+		Timeout: time.Second * 20,
+	}
+
+	res, err := cli.Get(urlstr)
 	if err != nil {
 		return
 	}
