@@ -152,7 +152,7 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/archive",
-			"Rev": "7ba76f1cb137b1b862c4ac2c2a78e84ff4e429ac"
+			"Rev": "ef12efb511b097baaebe5dbc1458d769d1e42a63"
 		},
 		{
 			"ImportPath": "github.com/datatogether/cdxj",
@@ -168,7 +168,7 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/sql_datastore",
-			"Rev": "a74da6a9ede6dfeb88280282ac9abaa908dfdfa2"
+			"Rev": "b0c91273ed161344348fb9c89e90a7b4edcb3a68"
 		},
 		{
 			"ImportPath": "github.com/datatogether/sqlutil",

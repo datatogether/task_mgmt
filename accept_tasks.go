@@ -96,6 +96,7 @@ func acceptTasks() (stop chan bool, err error) {
 				}
 			}()
 
+			log.Infof("starting task %s,%s", task.Id, task.Type)
 			if err := task.Do(store, tc); err != nil {
 				log.Errorf("task error: %s", err.Error())
 				msg.Nack(false, false)
