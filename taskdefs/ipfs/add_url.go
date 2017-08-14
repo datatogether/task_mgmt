@@ -4,7 +4,10 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/datatogether/archive"
+	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/ipfs/go-datastore"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
@@ -12,15 +15,31 @@ import (
 )
 
 type TaskAdd struct {
-	Url              string `json:"url"`              // url to resource to be added
-	Checksum         string `json:"checksum"`         // optional checksum to check resp against
-	ipfsApiServerUrl string `json:"ipfsApiServerUrl"` // url of IPFS api server
+	Url              string              `json:"url"`              // url to resource to be added
+	Checksum         string              `json:"checksum"`         // optional checksum to check resp against
+	ipfsApiServerUrl string              `json:"ipfsApiServerUrl"` // url of IPFS api server
+	store            datastore.Datastore // internal datastore pointer
 }
 
 func NewTaskAdd() tasks.Taskable {
 	return &TaskAdd{
 		ipfsApiServerUrl: IpfsApiServerUrl,
 	}
+}
+
+// AddCollection task needs to talk to an underlying database
+// it's expected that the task executor will call this method
+// before calling Do
+func (t *TaskAdd) SetDatastore(store datastore.Datastore) {
+	if sqlds, ok := store.(*sql_datastore.Datastore); ok {
+		// if we're passed an sql datastore
+		// make sure our collection model is registered
+		sqlds.Register(
+			&archive.Url{},
+		)
+	}
+
+	t.store = store
 }
 
 func (t *TaskAdd) Valid() error {
@@ -35,6 +54,16 @@ func (t *TaskAdd) Valid() error {
 
 func (t *TaskAdd) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "fetching resource"}
+
+	u := &archive.Url{
+		Url: t.Url,
+	}
+
+	if err := u.Read(t.store); err != nil && err != archive.ErrNotFound {
+		p.Error = fmt.Errorf("Error reading url: %s", err.Error())
+		pch <- p
+		return
+	}
 
 	// 1. Get the Url
 	pch <- p
