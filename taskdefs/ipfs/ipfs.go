@@ -4,17 +4,46 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/datatogether/archive"
 	"github.com/datatogether/warc"
 	"github.com/pborman/uuid"
 	"io"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
+	"path/filepath"
 	"time"
 )
 
 // Should be set by implementers
 var IpfsApiServerUrl = ""
+
+func ArchiveUrl(ipfsApiUrl string, url *archive.Url) (headerHash, bodyHash string, err error) {
+	urlstr := url.Url
+
+	header, body, err := GetUrlBytes(urlstr)
+	if err != nil {
+		err = fmt.Errorf("Error getting url: %s: %s", urlstr, err.Error())
+		return
+	}
+
+	headerHash, err = WriteToIpfs(ipfsApiUrl, filepath.Base(urlstr), header)
+	if err != nil {
+		err = fmt.Errorf("Error writing %s header to ipfs: %s", filepath.Base(urlstr), err.Error())
+		return
+	}
+
+	bodyHash, err = WriteToIpfs(ipfsApiUrl, filepath.Base(urlstr), body)
+	if err != nil {
+		err = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
+		return
+	}
+
+	// set hash for collection
+	url.Hash = bodyHash
+
+	return
+}
 
 // GetUrl grabs a url, return
 // currently a big 'ol work in progress, and will probably be moved into it's own
