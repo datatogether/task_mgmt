@@ -8,5 +8,6 @@ type Progress struct {
 	Steps   int     `json:"steps"`           // number of Steps in the task
 	Status  string  `json:"status"`          // status string that describes what is currently happening
 	Done    bool    `json:"done"`            // complete flag
+	Dest    string  `json:"dest"`            // place for sending users, could be a url, could be a relative path
 	Error   error   `json:"error,omitempty"` // error message
 }

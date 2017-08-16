@@ -6,6 +6,7 @@ import (
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/ipfs/go-datastore"
+	"net/http"
 )
 
 type TaskAdd struct {
@@ -59,12 +60,34 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 		return
 	}
 
-	_, _, err := ArchiveUrl(t.ipfsApiServerUrl, u)
-	if err != nil {
-		p.Error = err
-		pch <- p
-		return
-	}
+	// TODO - unify these to use the same response from a given URL
+	done := make(chan int, 0)
+	go func() {
+		if sqlds, ok := t.store.(*sql_datastore.Datastore); ok {
+			if res, err := http.Get(u.Url); err != nil {
+				fmt.Printf("error getting url: %s\n", err.Error())
+			} else {
+				if _, err := u.HandleGetResponse(sqlds.DB, res, func(err error) {}); err != nil {
+					fmt.Printf("handling get response: %s\n", err.Error())
+				}
+			}
+		}
+
+		done <- 0
+	}()
+	go func() {
+		_, _, err := ArchiveUrl(t.ipfsApiServerUrl, u)
+		if err != nil {
+			p.Error = err
+			pch <- p
+			return
+		}
+
+		done <- 0
+	}()
+
+	<-done
+	<-done
 
 	if err := u.Save(t.store); err != nil {
 		p.Error = fmt.Errorf("error saving url: %s", err.Error())
@@ -74,6 +97,7 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 
 	p.Percent = 1.0
 	p.Done = true
+	p.Dest = fmt.Sprintf("/content/%s", u.Hash)
 	pch <- p
 	return
 }
