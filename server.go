@@ -106,7 +106,7 @@ func initPostgres() {
 	if err := sqlutil.ConnectToDb("postgres", cfg.PostgresDbUrl, appDB); err != nil {
 		panic(err)
 	}
-	log.Infoln("connecteded to postgres db")
+	log.Infoln("connected to postgres db")
 	created, err := sqlutil.EnsureTables(appDB, packagePath("sql/schema.sql"),
 		"tasks")
 	if err != nil {
