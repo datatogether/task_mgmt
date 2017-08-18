@@ -101,29 +101,12 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 
 			// TODO - get the actual start time from header WARC Record
 			start := time.Now()
-			header, body, err := GetUrlBytes(urlstr)
+			headerHash, bodyHash, err := ArchiveUrl(t.ipfsApiServerUrl, &item.Url)
 			if err != nil {
-				p.Error = fmt.Errorf("Error getting url: %s: %s", urlstr, err.Error())
+				p.Error = err
 				pch <- p
 				return
 			}
-
-			headerhash, err := WriteToIpfs(t.ipfsApiServerUrl, filepath.Base(urlstr), header)
-			if err != nil {
-				p.Error = fmt.Errorf("Error writing %s header to ipfs: %s", filepath.Base(urlstr), err.Error())
-				pch <- p
-				return
-			}
-
-			bodyhash, err := WriteToIpfs(t.ipfsApiServerUrl, filepath.Base(urlstr), body)
-			if err != nil {
-				p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
-				pch <- p
-				return
-			}
-
-			// set hash for collection
-			item.Url.Hash = bodyhash
 
 			// TODO - demo content for now, this is going to need lots of refinement
 			indexRec := &cdxj.Record{
@@ -131,7 +114,7 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 				Timestamp:  start,
 				RecordType: "", // TODO set record type?
 				JSON: map[string]interface{}{
-					"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerhash, bodyhash),
+					"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerHash, bodyHash),
 				},
 			}
 
