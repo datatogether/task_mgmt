@@ -148,11 +148,11 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/api/apiutil",
-			"Rev": "5ec35bdbdaeec48be9dc8235739832d8efea9798"
+			"Rev": "90cdae837b23afe563695d760bdc022ad90a361d"
 		},
 		{
 			"ImportPath": "github.com/datatogether/archive",
-			"Rev": "ef12efb511b097baaebe5dbc1458d769d1e42a63"
+			"Rev": "f382b4f7f9a2ab9fc3897af028d3f560d6bab96b"
 		},
 		{
 			"ImportPath": "github.com/datatogether/cdxj",
@@ -165,6 +165,14 @@
 		{
 			"ImportPath": "github.com/datatogether/ffi",
 			"Rev": "d8bb8e6dafdcca782940d05398538b1c563be41d"
+		},
+		{
+			"ImportPath": "github.com/datatogether/linked_data",
+			"Rev": "ab38a4a5901f53bf9c8628f8223368710929b5f0"
+		},
+		{
+			"ImportPath": "github.com/datatogether/linked_data/pod",
+			"Rev": "ab38a4a5901f53bf9c8628f8223368710929b5f0"
 		},
 		{
 			"ImportPath": "github.com/datatogether/sql_datastore",
@@ -200,11 +208,11 @@
 		},
 		{
 			"ImportPath": "github.com/ipfs/go-datastore",
-			"Rev": "e7613971227c1afc1799b1ec9d3947c592f547eb"
+			"Rev": "e742294375282d992c112f37943c7f5ca87fb268"
 		},
 		{
 			"ImportPath": "github.com/ipfs/go-datastore/query",
-			"Rev": "e7613971227c1afc1799b1ec9d3947c592f547eb"
+			"Rev": "e742294375282d992c112f37943c7f5ca87fb268"
 		},
 		{
 			"ImportPath": "github.com/jbenet/go-base58",
@@ -237,8 +245,8 @@
 		},
 		{
 			"ImportPath": "github.com/multiformats/go-multihash",
-			"Comment": "0.1.0-75-gd6ebd61",
-			"Rev": "d6ebd610a180b411b34dba68aa29b651b312281a"
+			"Comment": "0.1.0-103-gf1ef5a0",
+			"Rev": "f1ef5a02f28c862ca5a2037907cf76cc6c98dbf9"
 		},
 		{
 			"ImportPath": "github.com/pborman/uuid",
@@ -256,40 +264,45 @@
 			"Rev": "5e5dc898656f695e2a086b8e12559febbfc01562"
 		},
 		{
+			"ImportPath": "github.com/spaolacci/murmur3",
+			"Comment": "v1.0-6-g4ec5a0f",
+			"Rev": "4ec5a0f56d4fc178129a8433576bf6f2fe672a9e"
+		},
+		{
 			"ImportPath": "github.com/streadway/amqp",
 			"Rev": "27859d32540aebd2e5befa52dc59ae8e6a0132b6"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/acme",
-			"Rev": "e1a4589e7d3ea14a3352255d04b6f1a418845e5e"
+			"Rev": "b176d7def5d71bdd214203491f89843ed217f420"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/acme/autocert",
-			"Rev": "e1a4589e7d3ea14a3352255d04b6f1a418845e5e"
+			"Rev": "b176d7def5d71bdd214203491f89843ed217f420"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blake2b",
-			"Rev": "e1a4589e7d3ea14a3352255d04b6f1a418845e5e"
+			"Rev": "b176d7def5d71bdd214203491f89843ed217f420"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/blake2s",
-			"Rev": "e1a4589e7d3ea14a3352255d04b6f1a418845e5e"
+			"Rev": "b176d7def5d71bdd214203491f89843ed217f420"
 		},
 		{
 			"ImportPath": "golang.org/x/crypto/sha3",
-			"Rev": "e1a4589e7d3ea14a3352255d04b6f1a418845e5e"
+			"Rev": "b176d7def5d71bdd214203491f89843ed217f420"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html",
-			"Rev": "59a0b19b5533c7977ddeb86b017bf507ed407b12"
+			"Rev": "1c05540f6879653db88113bc4a2b70aec4bd491f"
 		},
 		{
 			"ImportPath": "golang.org/x/net/html/atom",
-			"Rev": "59a0b19b5533c7977ddeb86b017bf507ed407b12"
+			"Rev": "1c05540f6879653db88113bc4a2b70aec4bd491f"
 		},
 		{
 			"ImportPath": "golang.org/x/net/idna",
-			"Rev": "59a0b19b5533c7977ddeb86b017bf507ed407b12"
+			"Rev": "1c05540f6879653db88113bc4a2b70aec4bd491f"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",
@@ -297,23 +310,27 @@
 		},
 		{
 			"ImportPath": "golang.org/x/text/secure/bidirule",
-			"Rev": "ccbd3f7822129ff389f8ca4858a9b9d4d910531c"
+			"Rev": "e56139fd9c5bc7244c76116c68e500765bb6db6b"
 		},
 		{
 			"ImportPath": "golang.org/x/text/transform",
-			"Rev": "ccbd3f7822129ff389f8ca4858a9b9d4d910531c"
+			"Rev": "e56139fd9c5bc7244c76116c68e500765bb6db6b"
 		},
 		{
 			"ImportPath": "golang.org/x/text/unicode/bidi",
-			"Rev": "ccbd3f7822129ff389f8ca4858a9b9d4d910531c"
+			"Rev": "e56139fd9c5bc7244c76116c68e500765bb6db6b"
 		},
 		{
 			"ImportPath": "golang.org/x/text/unicode/norm",
-			"Rev": "ccbd3f7822129ff389f8ca4858a9b9d4d910531c"
+			"Rev": "e56139fd9c5bc7244c76116c68e500765bb6db6b"
 		},
 		{
 			"ImportPath": "golang.org/x/text/width",
-			"Rev": "ccbd3f7822129ff389f8ca4858a9b9d4d910531c"
+			"Rev": "e56139fd9c5bc7244c76116c68e500765bb6db6b"
+		},
+		{
+			"ImportPath": "leb.io/hashland/keccakpg",
+			"Rev": "e13accbe55f7fa03c73c74ace4cca4c425e47260"
 		}
 	]
 }

@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"errors"
 	"path"
 	"strings"
 
@@ -281,4 +282,26 @@ func EntryKeys(e []dsq.Entry) []Key {
 		ks[i] = NewKey(e.Key)
 	}
 	return ks
+}
+
+func (k Key) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + k.String() + `"`), nil
+}
+
+func (k *Key) UnmarshalJSON(data []byte) error {
+	// TODO - normally we'd do this:
+	// var s string
+	// if err := json.Unmarshal(data, &s); err == nil {
+	// 	*k = NewKey(s)
+	// 	return nil
+	// }
+
+	// but that would bring the added weight of full json
+	// package just for a string coercion here, so the following
+	// may be acceptable.
+	if len(data) < 2 {
+		return errors.New("too short to unmarshal json string")
+	}
+	*k = NewKey(string(data[1 : len(data)-1]))
+	return nil
 }

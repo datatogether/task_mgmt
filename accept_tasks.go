@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
 	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
+	"github.com/datatogether/task-mgmt/taskdefs/pod"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/streadway/amqp"
 	"time"
@@ -13,6 +14,7 @@ func configureTasks() {
 	tasks.RegisterTaskdef("ipfs.addurl", ipfs.NewTaskAdd)
 	tasks.RegisterTaskdef("ipfs.addcollection", ipfs.NewAddCollection)
 	tasks.RegisterTaskdef("kiwix.updateSources", kiwix.NewTaskUpdateSources)
+	tasks.RegisterTaskdef("pod.addcatalog", pod.NewAddCatalog)
 
 	// Must set api server url to make ipfs tasks work
 	ipfs.IpfsApiServerUrl = cfg.IpfsApiUrl

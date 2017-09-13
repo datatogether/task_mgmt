@@ -6,7 +6,6 @@ import (
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/ipfs/go-datastore"
-	"net/http"
 )
 
 type TaskAdd struct {
@@ -63,14 +62,8 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 	// TODO - unify these to use the same response from a given URL
 	done := make(chan int, 0)
 	go func() {
-		if sqlds, ok := t.store.(*sql_datastore.Datastore); ok {
-			if res, err := http.Get(u.Url); err != nil {
-				fmt.Printf("error getting url: %s\n", err.Error())
-			} else {
-				if _, err := u.HandleGetResponse(sqlds.DB, res, func(err error) {}); err != nil {
-					fmt.Printf("handling get response: %s\n", err.Error())
-				}
-			}
+		if _, _, err := u.Get(t.store); err != nil {
+			fmt.Printf("error getting url: %s\n", err.Error())
 		}
 
 		done <- 0

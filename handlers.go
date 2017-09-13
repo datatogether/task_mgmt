@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/datatogether/api/apiutil"
 	"github.com/datatogether/task-mgmt/tasks"
 	"io"
@@ -20,12 +21,11 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func EnqueueTaskHandler(w http.ResponseWriter, r *http.Request) {
-	t := &tasks.Task{
-		Type: "ipfs.add",
-		Params: map[string]interface{}{
-			"url":              r.FormValue("url"),
-			"ipfsApiServerUrl": cfg.IpfsApiUrl,
-		},
+	t := &tasks.Task{}
+	if err := json.NewDecoder(r.Body).Decode(t); err != nil {
+		log.Infoln(err)
+		apiutil.WriteErrResponse(w, http.StatusBadRequest, err)
+		return
 	}
 
 	if err := t.Enqueue(store, cfg.AmqpUrl); err != nil {
