@@ -18,6 +18,7 @@ func configureTasks() {
 
 	// Must set api server url to make ipfs tasks work
 	ipfs.IpfsApiServerUrl = cfg.IpfsApiUrl
+	pod.IpfsApiServerUrl = cfg.IpfsApiUrl
 }
 
 // start accepting tasks from the queue, if setup doesn't error,
