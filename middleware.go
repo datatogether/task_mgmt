@@ -20,7 +20,7 @@ func middleware(handler http.HandlerFunc) http.HandlerFunc {
 	// no-auth middware func
 	return func(w http.ResponseWriter, r *http.Request) {
 		// poor man's logging:
-		log.Info(r.Method, r.URL.Path, time.Now())
+		log.Infoln(r.Method, r.URL.Path, time.Now())
 
 		// If this server is operating behind a proxy, but we still want to force
 		// users to use https, cfg.ProxyForceHttps == true will listen for the common

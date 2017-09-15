@@ -10,6 +10,7 @@ import (
 )
 
 func TasksHandler(w http.ResponseWriter, r *http.Request) {
+	log.Infoln("tasks req:", r.Method, r.URL.Path)
 	switch r.Method {
 	case "POST":
 		EnqueueTaskHandler(w, r)

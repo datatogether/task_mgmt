@@ -12,24 +12,16 @@ import (
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"time"
 )
 
 var (
 	// cfg is the global configuration for the server. It's read in at startup from
 	// the config.json file and enviornment variables, see config.go for more info.
 	cfg *config
-
-	// When was the last alert sent out?
-	// Use this value to avoid bombing alerts
-	lastAlertSent *time.Time
-
 	// log output
 	log = logrus.New()
-
 	// application database connection
 	appDB = &sql.DB{}
-
 	// hoist default store
 	store = sql_datastore.DefaultStore
 )
@@ -68,7 +60,7 @@ func main() {
 	// printConfigInfo()
 
 	// fire it up!
-	log.Info("starting server on port", cfg.Port)
+	log.Infoln("starting server on port", cfg.Port)
 
 	// start server wrapped in a log.Fatal b/c http.ListenAndServe will not
 	// return unless there's an error

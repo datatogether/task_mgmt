@@ -81,7 +81,6 @@ func (t *AddCatalog) Valid() error {
 
 func (t *AddCatalog) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "loading collection"}
-	// 1. Get the Collection & Item Count
 	pch <- p
 
 	collection := &archive.Collection{Url: t.Url}
@@ -149,6 +148,31 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 						// pch <- p
 						continue
 					}
+
+					// write metadata
+					go func() {
+						data, err := json.Marshal(ds)
+						if err != nil {
+							fmt.Println("error marshaling dataset to json:", err.Error())
+							return
+						}
+
+						meta := map[string]interface{}{}
+						if err := json.Unmarshal(data, meta); err != nil {
+							fmt.Println("error unmarshaling dataset to generic metadata:", err.Error())
+							return
+						}
+
+						md := &archive.Metadata{
+							Subject: bodyHash,
+							Meta:    meta,
+						}
+
+						if err := md.Write(t.store); err != nil {
+							fmt.Println("error writing metadata to store:", err.Error())
+							return
+						}
+					}()
 
 					// TODO - demo content for now, this is going to need lots of refinement
 					indexRec := &cdxj.Record{
