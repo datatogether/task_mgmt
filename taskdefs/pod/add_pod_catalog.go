@@ -158,7 +158,7 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 						}
 
 						meta := map[string]interface{}{}
-						if err := json.Unmarshal(data, meta); err != nil {
+						if err := json.Unmarshal(data, &meta); err != nil {
 							fmt.Println("error unmarshaling dataset to generic metadata:", err.Error())
 							return
 						}
