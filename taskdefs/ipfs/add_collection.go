@@ -9,7 +9,6 @@ import (
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 	"path/filepath"
-	"time"
 )
 
 const pageSize = 100
@@ -100,8 +99,8 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 			pch <- p
 
 			// TODO - get the actual start time from header WARC Record
-			start := time.Now()
-			headerHash, bodyHash, err := ArchiveUrl(t.ipfsApiServerUrl, &item.Url)
+			// start := time.Now()
+			headerHash, bodyHash, err := ArchiveUrl(t.store, t.ipfsApiServerUrl, &item.Url)
 			if err != nil {
 				p.Error = err
 				pch <- p
@@ -111,7 +110,7 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 			// TODO - demo content for now, this is going to need lots of refinement
 			indexRec := &cdxj.Record{
 				Uri:        urlstr,
-				Timestamp:  start,
+				Timestamp:  *item.LastGet,
 				RecordType: "", // TODO set record type?
 				JSON: map[string]interface{}{
 					"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerHash, bodyHash),
@@ -119,16 +118,16 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 			}
 
 			if err := index.Write(indexRec); err != nil {
-				p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
+				p.Error = fmt.Errorf("Error writing %s index record to ipfs: %s", filepath.Base(urlstr), err.Error())
 				pch <- p
 				return
 			}
 
-			if err := item.Save(t.store); err != nil {
-				p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
-				pch <- p
-				return
-			}
+			// if err := item.Save(t.store); err != nil {
+			// 	p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
+			// 	pch <- p
+			// 	return
+			// }
 		}
 	}
 

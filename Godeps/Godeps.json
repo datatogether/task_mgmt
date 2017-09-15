@@ -152,7 +152,7 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/archive",
-			"Rev": "f382b4f7f9a2ab9fc3897af028d3f560d6bab96b"
+			"Rev": "864504768ea5d6f8d7a411d02365f6c572e95061"
 		},
 		{
 			"ImportPath": "github.com/datatogether/cdxj",
@@ -184,7 +184,7 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/warc",
-			"Rev": "8fbf96f6a6d174f815ac77c47daf1c0fb1e4cfdb"
+			"Rev": "b3cea94e832c62afb22202cd5abb6f3693e5aa4e"
 		},
 		{
 			"ImportPath": "github.com/garyburd/redigo/internal",

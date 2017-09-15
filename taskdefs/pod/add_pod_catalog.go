@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/datatogether/archive"
+	"time"
 	// "github.com/datatogether/cdxj"
 	"github.com/datatogether/linked_data/pod"
 	"github.com/datatogether/sql_datastore"
@@ -22,13 +23,19 @@ type AddCatalog struct {
 	// paginate into dataset list, zero is no pagination / offset
 	Limit  int
 	Offset int
+	// how many fetching goroutines to spin up. max 5
+	Parallelism int
+	// how long to sleep between requests (inside of parallel routines)
+	CrawDelay time.Duration
 	// ipfsApiServerUrl string              `json:"ipfsApiServerUrl"` // url of IPFS api server
 	store datastore.Datastore // internal datastore pointer
 }
 
 func NewAddCatalog() tasks.Taskable {
 	return &AddCatalog{
-	// ipfsApiServerUrl: IpfsApiServerUrl,
+		// ipfsApiServerUrl: IpfsApiServerUrl,
+		CrawDelay:   time.Second / 2,
+		Parallelism: 2,
 	}
 }
 
@@ -52,6 +59,9 @@ func (t *AddCatalog) SetDatastore(store datastore.Datastore) {
 func (t *AddCatalog) Valid() error {
 	if t.Url == "" {
 		return fmt.Errorf("url is required")
+	}
+	if t.Parallelism > 5 {
+		t.Parallelism = 5
 	}
 	// if t.ipfsApiServerUrl == "" {
 	// 	return fmt.Errorf("no ipfs server url provided, please configure the ipfs tasks package")
@@ -95,70 +105,91 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 		return
 	}
 
-	pctAdd := 1.0 / float32(len(cat.Dataset))
+	if t.Limit == 0 {
+		t.Limit = len(cat.Dataset)
+	}
+
+	if t.Offset > len(cat.Dataset) {
+		p.Error = fmt.Errorf("offset of %d greater than %d datasets", len(cat.Dataset), t.Offset)
+		pch <- p
+		return
+	}
+
+	// t.Limit := t.Limit + t.Offset
+
+	// pctAdd := 1.0 / float32(len(cat.Dataset))
 	// indexBuf := bytes.NewBuffer(nil)
 	// index := cdxj.NewWriter(indexBuf)
 
-	// TODO - parallelize a lil bit
-	for i, ds := range cat.Dataset {
-		p.Status = fmt.Sprintf("archiving dataset %d/%d", i, len(cat.Dataset))
-		p.Percent += pctAdd
-		pch <- p
+	// TODO - refactor done chan to report progress, possibly sending the number
+	// of indexes *remaining* with each iteration
+	archiveIndexes := func(cat *pod.Catalog, start, stop int, done chan int) {
+		for i := start; i <= stop; i++ {
+			ds := cat.Dataset[i]
 
-		if t.Offset > 0 && i < t.Offset {
-			continue
-		}
-		if t.Limit > 0 && i > t.Limit {
-			break
-		}
+			for j, dist := range ds.Distribution {
+				if dist.DownloadURL != "" {
+					// headerHash, bodyHash, err := ArchiveUrl(t.ipfsApiServerUrl, &item.Url)
+					u := &archive.Url{Url: dist.DownloadURL}
 
-		for j, dist := range ds.Distribution {
-			if dist.DownloadURL != "" {
-				// headerHash, bodyHash, err := ArchiveUrl(t.ipfsApiServerUrl, &item.Url)
-				u := &archive.Url{Url: dist.DownloadURL}
+					_, _, err := u.Get(t.store)
+					if err != nil {
+						fmt.Println("error getting url:", err.Error())
+						// p.Error = err
+						// pch <- p
+						continue
+					}
 
-				_, _, err := u.Get(t.store)
-				if err != nil {
-					fmt.Println("error getting url:", err.Error())
-					// p.Error = err
-					// pch <- p
-					continue
-				}
+					// TODO - hash url & add metadata record
 
-				// TODO - hash url & add metadata record
+					// TODO - demo content for now, this is going to need lots of refinement
+					// indexRec := &cdxj.Record{
+					//   Uri:        urlstr,
+					//   Timestamp:  start,
+					//   RecordType: "", // TODO set record type?
+					//   JSON: map[string]interface{}{
+					//     "locator": fmt.Sprintf("urn:ipfs/%s/%s", headerHash, bodyHash),
+					//   },
+					// }
 
-				// TODO - demo content for now, this is going to need lots of refinement
-				// indexRec := &cdxj.Record{
-				//   Uri:        urlstr,
-				//   Timestamp:  start,
-				//   RecordType: "", // TODO set record type?
-				//   JSON: map[string]interface{}{
-				//     "locator": fmt.Sprintf("urn:ipfs/%s/%s", headerHash, bodyHash),
-				//   },
-				// }
+					// if err := index.Write(indexRec); err != nil {
+					//   p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
+					//   pch <- p
+					//   return
+					// }
 
-				// if err := index.Write(indexRec); err != nil {
-				//   p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
-				//   pch <- p
-				//   return
-				// }
+					// if err := item.Save(t.store); err != nil {
+					//   p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
+					//   pch <- p
+					//   return
+					// }
+					// fmt.Println(u.Url)
 
-				// if err := item.Save(t.store); err != nil {
-				//   p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
-				//   pch <- p
-				//   return
-				// }
-				fmt.Println(u.Url)
+					if err = collection.SaveItems(t.store, []*archive.CollectionItem{
+						&archive.CollectionItem{Url: *u},
+					}); err != nil {
+						p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
+						pch <- p
+						return
+					}
 
-				if err = collection.SaveItems(t.store, []*archive.CollectionItem{
-					&archive.CollectionItem{Url: *u},
-				}); err != nil {
-					p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
-					pch <- p
-					return
+					time.Sleep(t.CrawDelay)
 				}
 			}
 		}
+		done <- 1
+	}
+
+	c := make(chan int, t.Parallelism)
+	sectionSize := t.Limit / t.Parallelism
+	for i := 0; i < t.Parallelism; i++ {
+		start := t.Offset + (sectionSize * i)
+		stop := t.Offset + (sectionSize * (i + 1)) - 1
+		go archiveIndexes(cat, start, stop, c)
+	}
+	// Drain the channel.
+	for i := 0; i < t.Parallelism; i++ {
+		<-c // wait for one task to complete
 	}
 
 	p.Step++

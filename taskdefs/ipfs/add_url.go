@@ -69,7 +69,7 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 		done <- 0
 	}()
 	go func() {
-		_, _, err := ArchiveUrl(t.ipfsApiServerUrl, u)
+		_, _, err := ArchiveUrl(t.store, t.ipfsApiServerUrl, u)
 		if err != nil {
 			p.Error = err
 			pch <- p
