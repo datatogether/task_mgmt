@@ -1,4 +1,4 @@
-package pod
+package sciencebase
 
 import (
 	"bytes"
@@ -6,11 +6,12 @@ import (
 	"fmt"
 	"github.com/datatogether/archive"
 	"github.com/datatogether/cdxj"
-	"github.com/datatogether/linked_data/pod"
+	sb "github.com/datatogether/linked_data/sciencebase"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/ipfs/go-datastore"
+	"net/http"
 	"path/filepath"
 	"time"
 )
@@ -20,7 +21,7 @@ var IpfsApiServerUrl = ""
 const defaultCrawlDelay = time.Second / 2
 const pageSize = 100
 
-// AddCatalog injests a a collection to IPFS,
+// AddCatalog injests a collection to IPFS,
 // it iterates through each setting hashes on collection urls
 // and, eventually, generates a cdxj index of the archive
 type AddCatalog struct {
@@ -28,10 +29,8 @@ type AddCatalog struct {
 	CollectionTitle string
 	// url that points to catalog
 	Url string `json:"url"`
-	// paginate into dataset list, zero is no pagination / offset
-	Limit int
-	// offset to start archiving at
-	Offset int
+	// how many items deep to crawl at most, -1 == no max
+	MaxDepth int
 	// how many fetching goroutines to spin up. max 5
 	Parallelism int
 	// skip items that already have a hash value
@@ -73,8 +72,8 @@ func (t *AddCatalog) Valid() error {
 	if t.Url == "" {
 		return fmt.Errorf("url is required")
 	}
-	if t.Parallelism > 5 {
-		t.Parallelism = 5
+	if t.Parallelism > 20 {
+		t.Parallelism = 20
 	}
 	// super rough coercion to seconds if non-default crawldelay
 	// is specified
@@ -117,7 +116,7 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 		return
 	}
 
-	cat := &pod.Catalog{}
+	parent := &sb.Item{}
 	err = json.Unmarshal(body, cat)
 	if err != nil {
 		p.Error = fmt.Errorf("error parsing data catalog: %s", err.Error())
@@ -125,118 +124,14 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 		return
 	}
 
-	if t.Limit == 0 {
-		t.Limit = len(cat.Dataset)
-	}
-
-	if t.Offset > len(cat.Dataset) {
-		p.Error = fmt.Errorf("offset of %d greater than %d datasets", len(cat.Dataset), t.Offset)
-		pch <- p
-		return
-	}
-
-	p.Status = fmt.Sprintf("archiving items %d/%d of %d items", t.Offset, t.Offset+t.Limit, len(cat.Dataset))
-	pch <- p
-
-	// t.Limit := t.Limit + t.Offset
-
-	// pctAdd := 1.0 / float32(len(cat.Dataset))
 	indexBuf := bytes.NewBuffer(nil)
 	index := cdxj.NewWriter(indexBuf)
 
 	// TODO - refactor done chan to report progress, possibly sending the number
 	// of indexes *remaining* with each iteration
-	archiveIndexes := func(cat *pod.Catalog, chanNum, start, stop int, done chan int) {
-		for i := start; i <= stop; i++ {
-			ds := cat.Dataset[i]
 
-			p.Status = fmt.Sprintf("archiving item %d", i)
-			pch <- p
+	if err := ArchiveCatalog(col, t.Url, t.MaxDepth, t.Parallelism); err != nil {
 
-			for j, dist := range ds.Distribution {
-				if dist.DownloadURL != "" {
-					u := &archive.Url{Url: dist.DownloadURL}
-
-					headerHash, bodyHash, err := ipfs.ArchiveUrl(t.store, t.ipfsApiServerUrl, u)
-					if err != nil {
-						fmt.Println("error archiving u url:", err.Error())
-						continue
-					}
-
-					// write metadata
-					go func() {
-						data, err := json.Marshal(ds)
-						if err != nil {
-							fmt.Println("error marshaling dataset to json:", err.Error())
-							return
-						}
-
-						meta := map[string]interface{}{}
-						if err := json.Unmarshal(data, &meta); err != nil {
-							fmt.Println("error unmarshaling dataset to generic metadata:", err.Error())
-							return
-						}
-
-						md := &archive.Metadata{
-							Subject: bodyHash,
-							Meta:    meta,
-						}
-
-						if err := md.Write(t.store); err != nil {
-							fmt.Println("error writing metadata to store:", err.Error())
-							return
-						}
-					}()
-
-					// if get fails, we need to set last get manually
-					if u.LastGet == nil {
-						now := time.Now()
-						u.LastGet = &now
-					}
-
-					// TODO - demo content for now, this is going to need lots of refinement
-					indexRec := &cdxj.Record{
-						Uri:        u.Url,
-						Timestamp:  *u.LastGet,
-						RecordType: "", // TODO set record type?
-						JSON: map[string]interface{}{
-							"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerHash, bodyHash),
-						},
-					}
-
-					if err := index.Write(indexRec); err != nil {
-						p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(u.Url), err.Error())
-						pch <- p
-						return
-					}
-
-					if err = collection.SaveItems(t.store, []*archive.CollectionItem{
-						&archive.CollectionItem{Url: *u},
-					}); err != nil {
-						p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
-						pch <- p
-						return
-					}
-
-					time.Sleep(t.CrawDelay)
-				}
-			}
-		}
-		done <- chanNum
-	}
-
-	c := make(chan int, t.Parallelism)
-	sectionSize := t.Limit / t.Parallelism
-	for i := 0; i < t.Parallelism; i++ {
-		start := t.Offset + (sectionSize * i)
-		stop := t.Offset + (sectionSize * (i + 1)) - 1
-		// fmt.Println("chan", i, start, stop)
-		go archiveIndexes(cat, i, start, stop, c)
-	}
-	// Drain the channel.
-	for i := 0; i < t.Parallelism; i++ {
-		num := <-c // wait for one task to complete
-		fmt.Printf("chan %d complete\n", num)
 	}
 
 	p.Step++
@@ -269,4 +164,106 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 	p.Done = true
 	pch <- p
 	return
+}
+
+func ArchiveCatalog(col *archive.Collection, index *cdxj.Writer, rooturl string, maxDepth, parallelism int) error {
+	ch := make(chan childItem)
+	tracks := make([]chan childItem, parallelism)
+	done := make(chan bool)
+
+	for _, track := range tracks {
+		track = make(chan childItem, 5)
+		go func() {
+			for child := range track {
+				if err := ArchiveChild(col, index, child, ch); err != nil {
+					fmt.Println("error archiving url:", err.Error())
+					// TODO - collect errored urls, or flag as errored?
+				}
+				time.Sleep(t.CrawDelay)
+			}
+		}()
+	}
+
+	go func() {
+		t := 0
+		for child := range ch {
+
+			if maxDepth == -1 || child.depth < maxDepth {
+				track[t] <- child
+				t++
+				if t == len(tracks) {
+					t = 0
+				}
+				stack++
+			}
+
+			stack--
+			if stack == 0 {
+				for _, track := range tracks {
+					close(track)
+				}
+				close(ch)
+				done <- true
+			}
+		}
+	}()
+
+	// add root item to kick off
+	ch <- childItem{0, rootUrl}
+	<-done
+	return
+}
+
+type childItem struct {
+	depth int
+	url   string
+}
+
+func ArchiveChild(collection *archive.Collection, index *cdxj.Writer, child childItem, ch chan childItem) error {
+	// archive
+	hh, bh, err := ipfs.ArchiveUrl(store, ipfsApiUrl, child.url)
+	if err != nil {
+		return err
+	}
+
+	item := &sb.Item{}
+	if err := json.NewDecoder(res.Body).Decode(item); err != nil {
+		return err
+	}
+
+	if err := ArchiveFiles(col, index, item); err != nil {
+
+	}
+
+	if u := item.ChildrenJsonUrl(); item.HasChildren && u != "" {
+		// Get URl, archive, add to collection
+		res, err := http.Get(u)
+		if err != nil {
+			return err
+		}
+		// parse json
+		defer res.Close()
+		c := &sb.Catalog{}
+		if err := json.NewDecoder(res.Body).Decode(c); err != nil {
+			return err
+		}
+
+		// iterate through "items", forward through channel
+		for _, item := range c.Items {
+			if item.Link != nil {
+				ch <- childItem{child.depth + 1, item.Link.JsonUrl(), nil}
+			}
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func ArchiveFiles(col *archive.Collection, index *cdxj.Writer, item *sb.Item) error {
+	for _, f := range item.Files {
+		// TODO - archive file
+
+	}
+	return nil
 }

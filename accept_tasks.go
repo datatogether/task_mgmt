@@ -25,11 +25,12 @@ func configureTasks() {
 // it returns a stop channel writing to stop will teardown the
 // func and stop accepting tasks
 func acceptTasks() (stop chan bool, err error) {
+	stop = make(chan bool)
 	if cfg.AmqpUrl == "" {
-		return nil, fmt.Errorf("no amqp url specified")
+		log.Infoln("no amqp url specified, queue listening disabled")
+		return stop, nil
 	}
 
-	stop = make(chan bool)
 	log.Printf("connecting to: %s", cfg.AmqpUrl)
 
 	var conn *amqp.Connection
@@ -89,7 +90,6 @@ func acceptTasks() (stop chan bool, err error) {
 			}
 
 			tc := make(chan *tasks.Task, 10)
-
 			// accept tasks
 			go func() {
 				for t := range tc {
