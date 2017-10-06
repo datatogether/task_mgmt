@@ -5,6 +5,7 @@ import (
 	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
 	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
 	"github.com/datatogether/task-mgmt/taskdefs/pod"
+	"github.com/datatogether/task-mgmt/taskdefs/sciencebase"
 	"github.com/datatogether/task-mgmt/tasks"
 	"github.com/streadway/amqp"
 	"time"
@@ -15,10 +16,12 @@ func configureTasks() {
 	tasks.RegisterTaskdef("ipfs.addcollection", ipfs.NewAddCollection)
 	tasks.RegisterTaskdef("kiwix.updateSources", kiwix.NewTaskUpdateSources)
 	tasks.RegisterTaskdef("pod.addcatalog", pod.NewAddCatalog)
+	tasks.RegisterTaskdef("sb.addCatalogTree", sciencebase.NewAddCatalogTree)
 
 	// Must set api server url to make ipfs tasks work
 	ipfs.IpfsApiServerUrl = cfg.IpfsApiUrl
 	pod.IpfsApiServerUrl = cfg.IpfsApiUrl
+	sciencebase.IpfsApiServerUrl = cfg.IpfsApiUrl
 }
 
 // start accepting tasks from the queue, if setup doesn't error,

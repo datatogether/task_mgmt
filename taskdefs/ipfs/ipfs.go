@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"github.com/datatogether/archive"
 	"github.com/ipfs/go-datastore"
-	"github.com/jbenet/go-base58"
-	"github.com/multiformats/go-multihash"
+	// "github.com/jbenet/go-base58"
+	// "github.com/multiformats/go-multihash"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -129,5 +129,10 @@ func WriteToIpfs(ipfsurl, filename string, data []byte) (hash string, err error)
 }
 
 func ReadFile(ipfsUrl, hash string) (io.ReadCloser, error) {
-	return http.Get(fmt.Sprintf("%s/cat?arg=%s", ipfsUrl, hash))
+	res, err := http.Get(fmt.Sprintf("%s/cat?arg=%s", ipfsUrl, hash))
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Body, nil
 }
