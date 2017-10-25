@@ -155,14 +155,13 @@ func ArchiveCatalog(store datastore.Datastore, ipfsApiUrl string, col *archive.C
 	tracks := make([]chan childItem, parallelism)
 	wait := make(chan bool)
 	start := time.Now()
-	count++
 
 	for i, _ := range tracks {
 		tracks[i] = make(chan childItem, 100)
 		go func(track, visit, visited chan childItem) {
 			for child := range track {
 				if err := ArchiveChild(store, ipfsApiUrl, col, index, child, visit, visited); err != nil {
-					fmt.Println("error archiving url:", err.Error())
+					fmt.Println("error archiving url", err.Error())
 					// TODO - collect errored urls, or flag as errored?
 				}
 			}
@@ -175,6 +174,7 @@ func ArchiveCatalog(store datastore.Datastore, ipfsApiUrl string, col *archive.C
 		for {
 			select {
 			case child, ok := <-visit:
+				fmt.Println("visit", child.url)
 				if ok && maxDepth == -1 || child.depth < maxDepth {
 					tracks[t] <- child
 					t++
@@ -212,6 +212,7 @@ func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *arch
 	if err != nil {
 		return err
 	}
+	count++
 
 	body, err := ipfs.ReadFile(ipfsApiUrl, bh)
 	if err != nil {
@@ -221,69 +222,68 @@ func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *arch
 
 	item := &sb.Item{}
 	if err := json.NewDecoder(body).Decode(item); err != nil {
+		fmt.Println("error decoding child json", u.Url, err.Error())
 		return err
 	}
 	body.Close()
 
 	// grab any children in a goroutine
 	if item.HasChildren {
-		go func(item *sb.Item) {
-			u := &archive.Url{Url: child.url}
-			hh, bh, err := ipfs.ArchiveUrl(store, ipfsApiUrl, u)
-			if err != nil {
-				fmt.Println("error archiving children catalog url: ", err.Error())
-				return
-			}
+		u := &archive.Url{Url: item.ChildrenJsonUrl()}
+		hh, bh, err := ipfs.ArchiveUrl(store, ipfsApiUrl, u)
+		if err != nil {
+			fmt.Println("error archiving children catalog url: ", err.Error())
+			return err
+		}
 
-			body, err := ipfs.ReadFile(ipfsApiUrl, bh)
-			if err != nil {
-				fmt.Println("error getting ipfs json body:", err.Error())
-				return
-			}
+		body, err := ipfs.ReadFile(ipfsApiUrl, bh)
+		if err != nil {
+			fmt.Println("error getting ipfs json body:", err.Error())
+			return err
+		}
 
-			c := &sb.Catalog{}
-			if err := json.NewDecoder(body).Decode(c); err != nil {
-				fmt.Printf("error decoding chilren json: %s", err.Error())
-				return
-			}
-			body.Close()
+		c := &sb.Catalog{}
+		if err := json.NewDecoder(body).Decode(c); err != nil {
+			fmt.Printf("error decoding chilren json: %s", err.Error())
+			return err
+		}
+		body.Close()
 
-			// iterate through "items", forward through channel
-			for _, item := range c.Items {
-				if item.Link != nil {
-					visit <- childItem{child.depth + 1, item.Link.JsonUrl()}
-				}
+		// iterate through "items", forward through channel
+		for _, item := range c.Items {
+			if item.Link != nil {
+				visit <- childItem{child.depth + 1, item.Link.JsonUrl()}
 			}
+		}
 
-			if err = collection.SaveItems(store, []*archive.CollectionItem{
-				&archive.CollectionItem{Url: *u},
-			}); err != nil {
-				// p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
-				// pch <- p
-				return
-			}
+		if err = collection.SaveItems(store, []*archive.CollectionItem{
+			&archive.CollectionItem{Url: *u},
+		}); err != nil {
+			// p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
+			// pch <- p
+			return err
+		}
 
-			if u.LastGet == nil {
-				now := time.Now()
-				u.LastGet = &now
-			}
+		if u.LastGet == nil {
+			now := time.Now()
+			u.LastGet = &now
+		}
 
-			// TODO - demo content for now, this is going to need lots of refinement
-			indexRec := &cdxj.Record{
-				Uri:        u.Url,
-				Timestamp:  *u.LastGet,
-				RecordType: "", // TODO set record type?
-				JSON: map[string]interface{}{
-					"locator": fmt.Sprintf("urn:ipfs/%s/%s", hh, bh),
-				},
-			}
+		// TODO - demo content for now, this is going to need lots of refinement
+		indexRec := &cdxj.Record{
+			Uri:        u.Url,
+			Timestamp:  *u.LastGet,
+			RecordType: "", // TODO set record type?
+			JSON: map[string]interface{}{
+				"locator": fmt.Sprintf("urn:ipfs/%s/%s", hh, bh),
+			},
+		}
 
-			if err := index.Write(indexRec); err != nil {
-				// p.Error = fmt.Errorf("Error writing %s cdxj index to ipfs: %s", filepath.Base(u.Url), err.Error())
-				// pch <- p
-				return
-			}
-		}(item)
+		if err := index.Write(indexRec); err != nil {
+			// p.Error = fmt.Errorf("Error writing %s cdxj index to ipfs: %s", filepath.Base(u.Url), err.Error())
+			// pch <- p
+			return err
+		}
 	}
 
 	// TODO - actually archive files
