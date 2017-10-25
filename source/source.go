@@ -1,4 +1,4 @@
-// This package is a carry-over from a previous incarnation of task-mgmt
+// This package is a carry-over from a previous incarnation of task_mgmt
 // it should be cleaned up & removed in favour of types from the github.com/datatogether/archive package
 package source
 
@@ -14,9 +14,9 @@ import (
 )
 
 // Source is an http origin of data
-// TODO - this should be folded into archive.Url, feels redundant
+// TODO - this should be folded into core.Url, feels redundant
 // TODO - ugh, archive already has a "Source" type that we're only
-// able to get around b/c task-mgmt & archive run against different dbs
+// able to get around b/c task_mgmt & archive run against different dbs
 // need to destroy this asap
 type Source struct {
 	// version 4 uuid

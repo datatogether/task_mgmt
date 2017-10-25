@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/datatogether/archive"
 	"github.com/datatogether/cdxj"
+	"github.com/datatogether/core"
 	"github.com/datatogether/linked_data/pod"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/taskdefs/ipfs"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 	"path/filepath"
 	"time"
@@ -60,9 +60,9 @@ func (t *AddCatalog) SetDatastore(store datastore.Datastore) {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
 		sqlds.Register(
-			&archive.Url{},
-			&archive.Collection{},
-			&archive.CollectionItem{},
+			&core.Url{},
+			&core.Collection{},
+			&core.CollectionItem{},
 		)
 	}
 
@@ -94,12 +94,12 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "loading collection"}
 	pch <- p
 
-	collection := &archive.Collection{Url: t.Url}
-	if err := collection.Read(t.store); err != nil && err != archive.ErrNotFound {
+	collection := &core.Collection{Url: t.Url}
+	if err := collection.Read(t.store); err != nil && err != core.ErrNotFound {
 		p.Error = fmt.Errorf("Error reading collection: %s", err.Error())
 		pch <- p
 		return
-	} else if err == archive.ErrNotFound {
+	} else if err == core.ErrNotFound {
 		collection.Title = t.CollectionTitle
 		if err = collection.Save(t.store); err != nil {
 			p.Error = fmt.Errorf("Error saving colleciton: %s", err.Error())
@@ -109,7 +109,7 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 	}
 	p.Step++
 
-	u := archive.Url{Url: t.Url}
+	u := core.Url{Url: t.Url}
 	body, _, err := u.Get(t.store)
 	if err != nil {
 		p.Error = fmt.Errorf("error getting url: %s", err.Error())
@@ -155,7 +155,7 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 
 			for j, dist := range ds.Distribution {
 				if dist.DownloadURL != "" {
-					u := &archive.Url{Url: dist.DownloadURL}
+					u := &core.Url{Url: dist.DownloadURL}
 
 					headerHash, bodyHash, err := ipfs.ArchiveUrl(t.store, t.ipfsApiServerUrl, u)
 					if err != nil {
@@ -177,7 +177,7 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 							return
 						}
 
-						md := &archive.Metadata{
+						md := &core.Metadata{
 							Subject: bodyHash,
 							Meta:    meta,
 						}
@@ -210,8 +210,8 @@ func (t *AddCatalog) Do(pch chan tasks.Progress) {
 						return
 					}
 
-					if err = collection.SaveItems(t.store, []*archive.CollectionItem{
-						&archive.CollectionItem{Url: *u},
+					if err = collection.SaveItems(t.store, []*core.CollectionItem{
+						&core.CollectionItem{Url: *u},
 					}); err != nil {
 						p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
 						pch <- p

@@ -3,10 +3,10 @@ package ipfs
 import (
 	"bytes"
 	"fmt"
-	"github.com/datatogether/archive"
 	"github.com/datatogether/cdxj"
+	"github.com/datatogether/core"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 	"path/filepath"
 )
@@ -36,9 +36,9 @@ func (t *AddCollection) SetDatastore(store datastore.Datastore) {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
 		sqlds.Register(
-			&archive.Url{},
-			&archive.Collection{},
-			&archive.CollectionItem{},
+			&core.Url{},
+			&core.Collection{},
+			&core.CollectionItem{},
 		)
 	}
 
@@ -60,7 +60,7 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 	// 1. Get the Collection & Item Count
 	pch <- p
 
-	collection := &archive.Collection{Id: t.CollectionId}
+	collection := &core.Collection{Id: t.CollectionId}
 	if err := collection.Read(t.store); err != nil {
 		p.Error = fmt.Errorf("Error reading collection: %s", err.Error())
 		pch <- p

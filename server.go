@@ -1,5 +1,5 @@
 // Task Management manages tasks, including tracking the state of tasks as they move through a queue
-// As tasks are completed task-mgmt updates records of when tasks started, stopped, etc.
+// As tasks are completed task_mgmt updates records of when tasks started, stopped, etc.
 package main
 
 import (
@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/sqlutil"
-	"github.com/datatogether/task-mgmt/source"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/source"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"

@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/datatogether/archive"
 	"github.com/datatogether/cdxj"
+	"github.com/datatogether/core"
 	sb "github.com/datatogether/linked_data/sciencebase"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/taskdefs/ipfs"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 	"time"
 )
@@ -58,9 +58,9 @@ func (t *AddCatalogTree) SetDatastore(store datastore.Datastore) {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
 		sqlds.Register(
-			&archive.Url{},
-			&archive.Collection{},
-			&archive.CollectionItem{},
+			&core.Url{},
+			&core.Collection{},
+			&core.CollectionItem{},
 		)
 	}
 
@@ -92,12 +92,12 @@ func (t *AddCatalogTree) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "loading collection"}
 	pch <- p
 
-	collection := &archive.Collection{Url: t.Url}
-	if err := collection.Read(t.store); err != nil && err != archive.ErrNotFound {
+	collection := &core.Collection{Url: t.Url}
+	if err := collection.Read(t.store); err != nil && err != core.ErrNotFound {
 		p.Error = fmt.Errorf("Error reading collection: %s", err.Error())
 		pch <- p
 		return
-	} else if err == archive.ErrNotFound {
+	} else if err == core.ErrNotFound {
 		collection.Title = t.CollectionTitle
 		if err = collection.Save(t.store); err != nil {
 			p.Error = fmt.Errorf("Error saving colleciton: %s", err.Error())
@@ -149,7 +149,7 @@ func (t *AddCatalogTree) Do(pch chan tasks.Progress) {
 	return
 }
 
-func ArchiveCatalog(store datastore.Datastore, ipfsApiUrl string, col *archive.Collection, index *cdxj.Writer, rootUrl string, maxDepth, parallelism int) error {
+func ArchiveCatalog(store datastore.Datastore, ipfsApiUrl string, col *core.Collection, index *cdxj.Writer, rootUrl string, maxDepth, parallelism int) error {
 	visit := make(chan childItem, 100)
 	visited := make(chan childItem, 100)
 	tracks := make([]chan childItem, parallelism)
@@ -205,9 +205,9 @@ type childItem struct {
 	url   string
 }
 
-func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *archive.Collection, index *cdxj.Writer, child childItem, visit, visited chan childItem) error {
-	// archive
-	u := &archive.Url{Url: child.url}
+func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *core.Collection, index *cdxj.Writer, child childItem, visit, visited chan childItem) error {
+	// core
+	u := &core.Url{Url: child.url}
 	hh, bh, err := ipfs.ArchiveUrl(store, ipfsApiUrl, u)
 	if err != nil {
 		return err
@@ -229,7 +229,7 @@ func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *arch
 
 	// grab any children in a goroutine
 	if item.HasChildren {
-		u := &archive.Url{Url: item.ChildrenJsonUrl()}
+		u := &core.Url{Url: item.ChildrenJsonUrl()}
 		hh, bh, err := ipfs.ArchiveUrl(store, ipfsApiUrl, u)
 		if err != nil {
 			fmt.Println("error archiving children catalog url: ", err.Error())
@@ -256,8 +256,8 @@ func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *arch
 			}
 		}
 
-		if err = collection.SaveItems(store, []*archive.CollectionItem{
-			&archive.CollectionItem{Url: *u},
+		if err = collection.SaveItems(store, []*core.CollectionItem{
+			&core.CollectionItem{Url: *u},
 		}); err != nil {
 			// p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
 			// pch <- p
@@ -311,8 +311,8 @@ func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *arch
 		return err
 	}
 
-	if err = collection.SaveItems(store, []*archive.CollectionItem{
-		&archive.CollectionItem{Url: *u},
+	if err = collection.SaveItems(store, []*core.CollectionItem{
+		&core.CollectionItem{Url: *u},
 	}); err != nil {
 		// p.Error = fmt.Errorf("error saving dataset %d dist %d to collection: %s", i, j, err.Error())
 		// pch <- p
@@ -323,10 +323,10 @@ func ArchiveChild(store datastore.Datastore, ipfsApiUrl string, collection *arch
 	return nil
 }
 
-// func ArchiveFiles(store datastore.Datastore, ipfsApiUrl string, col *archive.Collection, index *cdxj.Writer, item *sb.Item) error {
+// func ArchiveFiles(store datastore.Datastore, ipfsApiUrl string, col *core.Collection, index *cdxj.Writer, item *sb.Item) error {
 // 	for _, f := range item.Files {
-// 		// TODO - archive file
-// 		u := &archive.Url{Url: f.Url}
+// 		// TODO - core file
+// 		u := &core.Url{Url: f.Url}
 // 		hh, bh, err := ipfs.ArchiveUrl(store, ipfsApiUrl, u)
 
 // 		if u.LastGet == nil {

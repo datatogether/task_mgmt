@@ -46,7 +46,7 @@ func middleware(handler http.HandlerFunc) http.HandlerFunc {
 }
 
 // authMiddleware checks for github auth
-// TODO - this is a carry-over from a former implementation of task-mgmt
+// TODO - this is a carry-over from a former implementation of task_mgmt
 // that was specific to executing the kiwix zim task it should be shifted
 // over to some sort of permissions service
 

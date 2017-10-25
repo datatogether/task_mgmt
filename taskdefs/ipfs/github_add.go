@@ -2,7 +2,7 @@ package ipfs
 
 import (
 	"fmt"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"os"
 	"path/filepath"
 )

@@ -19,7 +19,7 @@ CREATE TABLE tasks (
 
 // an available task a source.Checksum && repo.LatestCommit combination that doesn't
 // have a task model already created.
-// TODO - this is a carry-over from the former task-mgmt, need to rethink
+// TODO - this is a carry-over from the former task_mgmt, need to rethink
 const qAvailableTasks = `
 WITH t AS (
   SELECT

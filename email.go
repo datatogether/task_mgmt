@@ -4,7 +4,7 @@ package main
 // import (
 // 	"encoding/json"
 // 	"fmt"
-// 	"github.com/datatogether/task-mgmt/tasks"
+// 	"github.com/datatogether/task_mgmt/tasks"
 // 	"io"
 // 	"io/ioutil"
 // 	"net/http"

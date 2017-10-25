@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
-	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
-	"github.com/datatogether/task-mgmt/taskdefs/pod"
-	"github.com/datatogether/task-mgmt/taskdefs/sciencebase"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/taskdefs/ipfs"
+	"github.com/datatogether/task_mgmt/taskdefs/kiwix"
+	"github.com/datatogether/task_mgmt/taskdefs/pod"
+	"github.com/datatogether/task_mgmt/taskdefs/sciencebase"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/streadway/amqp"
 	"time"
 )

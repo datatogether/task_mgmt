@@ -2,9 +2,9 @@ package ipfs
 
 import (
 	"fmt"
-	"github.com/datatogether/archive"
+	"github.com/datatogether/core"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 )
 
@@ -29,7 +29,7 @@ func (t *TaskAdd) SetDatastore(store datastore.Datastore) {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
 		sqlds.Register(
-			&archive.Url{},
+			&core.Url{},
 		)
 	}
 
@@ -49,11 +49,11 @@ func (t *TaskAdd) Valid() error {
 func (t *TaskAdd) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "fetching resource"}
 
-	u := &archive.Url{
+	u := &core.Url{
 		Url: t.Url,
 	}
 
-	if err := u.Read(t.store); err != nil && err != archive.ErrNotFound {
+	if err := u.Read(t.store); err != nil && err != core.ErrNotFound {
 		p.Error = fmt.Errorf("Error reading url: %s", err.Error())
 		pch <- p
 		return

@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/datatogether/archive"
+	"github.com/datatogether/core"
 	"github.com/ipfs/go-datastore"
 	// "github.com/jbenet/go-base58"
 	// "github.com/multiformats/go-multihash"
@@ -18,7 +18,7 @@ import (
 var IpfsApiServerUrl = ""
 
 // TODO - add a skipHashed arg that allows us to skip urls that already have been seen
-func ArchiveUrl(store datastore.Datastore, ipfsApiUrl string, url *archive.Url) (headerHash, bodyHash string, err error) {
+func ArchiveUrl(store datastore.Datastore, ipfsApiUrl string, url *core.Url) (headerHash, bodyHash string, err error) {
 	urlstr := url.Url
 	// header, body, err := GetUrlBytes(urlstr)
 	// if err != nil {
@@ -43,10 +43,12 @@ func ArchiveUrl(store datastore.Datastore, ipfsApiUrl string, url *archive.Url) 
 	// 	}
 	// }
 
-	header, err := url.WarcRequest().Bytes()
-	if err != nil {
+	buf := &bytes.Buffer{}
+	if err = url.WarcRequest().Write(buf); err != nil {
 		return
 	}
+
+	header := buf.Bytes()
 
 	headerHash, err = WriteToIpfs(ipfsApiUrl, filepath.Base(urlstr), header)
 	if err != nil {
