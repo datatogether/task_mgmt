@@ -2,8 +2,9 @@
 
 [![GitHub](https://img.shields.io/badge/project-Data_Together-487b57.svg?style=flat-square)](http://github.com/datatogether)
 [![Slack](https://img.shields.io/badge/slack-Archivers-b44e88.svg?style=flat-square)](https://archivers-slack.herokuapp.com/)
-[![License](https://img.shields.io/github/license/mashape/apistatus.svg)](./LICENSE) 
-[![Codecov](https://img.shields.io/codecov/c/github/datatogether/task_mgmt.svg?style=flat-square)](https://codecov.io/gh/datatogether/task_mgmt)
+[![License](https://img.shields.io/github/license/datatogether/task_mgmt.svg)](./LICENSE)
+![Codecov](https://img.shields.io/codecov/c/github/datatogether/task_mgmt.svg)
+![CI](https://img.shields.io/circleci/project/github/datatogether/task_mgmt.svg)
 
 The task_mgmt is a service for managing & executing archiving tasks. All task definitions are in the `taskdefs`, directory. task_mgmt manages the state of tasks as they move through the queue, questions like "what tasks are currently running?". As tasks are completed task_mgmt updates records of when tasks started, finished, or failed.
 
