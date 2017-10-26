@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"net"
 	"net/rpc"
 	"time"

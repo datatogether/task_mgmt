@@ -2,11 +2,10 @@ package ipfs
 
 import (
 	"fmt"
-	"github.com/datatogether/archive"
+	"github.com/datatogether/core"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
-	"net/http"
 )
 
 type TaskAdd struct {
@@ -30,7 +29,7 @@ func (t *TaskAdd) SetDatastore(store datastore.Datastore) {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
 		sqlds.Register(
-			&archive.Url{},
+			&core.Url{},
 		)
 	}
 
@@ -50,11 +49,11 @@ func (t *TaskAdd) Valid() error {
 func (t *TaskAdd) Do(pch chan tasks.Progress) {
 	p := tasks.Progress{Step: 1, Steps: 4, Status: "fetching resource"}
 
-	u := &archive.Url{
+	u := &core.Url{
 		Url: t.Url,
 	}
 
-	if err := u.Read(t.store); err != nil && err != archive.ErrNotFound {
+	if err := u.Read(t.store); err != nil && err != core.ErrNotFound {
 		p.Error = fmt.Errorf("Error reading url: %s", err.Error())
 		pch <- p
 		return
@@ -63,20 +62,14 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 	// TODO - unify these to use the same response from a given URL
 	done := make(chan int, 0)
 	go func() {
-		if sqlds, ok := t.store.(*sql_datastore.Datastore); ok {
-			if res, err := http.Get(u.Url); err != nil {
-				fmt.Printf("error getting url: %s\n", err.Error())
-			} else {
-				if _, err := u.HandleGetResponse(sqlds.DB, res, func(err error) {}); err != nil {
-					fmt.Printf("handling get response: %s\n", err.Error())
-				}
-			}
+		if _, _, err := u.Get(t.store); err != nil {
+			fmt.Printf("error getting url: %s\n", err.Error())
 		}
 
 		done <- 0
 	}()
 	go func() {
-		_, _, err := ArchiveUrl(t.ipfsApiServerUrl, u)
+		_, _, err := ArchiveUrl(t.store, t.ipfsApiServerUrl, u)
 		if err != nil {
 			p.Error = err
 			pch <- p

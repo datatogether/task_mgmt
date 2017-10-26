@@ -4,28 +4,51 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/datatogether/archive"
-	"github.com/datatogether/warc"
-	"github.com/pborman/uuid"
+	"github.com/datatogether/core"
+	"github.com/ipfs/go-datastore"
+	// "github.com/jbenet/go-base58"
+	// "github.com/multiformats/go-multihash"
 	"io"
-	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"path/filepath"
-	"time"
 )
 
 // Should be set by implementers
 var IpfsApiServerUrl = ""
 
-func ArchiveUrl(ipfsApiUrl string, url *archive.Url) (headerHash, bodyHash string, err error) {
+// TODO - add a skipHashed arg that allows us to skip urls that already have been seen
+func ArchiveUrl(store datastore.Datastore, ipfsApiUrl string, url *core.Url) (headerHash, bodyHash string, err error) {
 	urlstr := url.Url
+	// header, body, err := GetUrlBytes(urlstr)
+	// if err != nil {
+	// 	err = fmt.Errorf("Error getting url: %s: %s", urlstr, err.Error())
+	// 	return
+	// }
 
-	header, body, err := GetUrlBytes(urlstr)
+	body, _, err := url.Get(store)
 	if err != nil {
-		err = fmt.Errorf("Error getting url: %s: %s", urlstr, err.Error())
+		err = fmt.Errorf("Error fetching url '%s': %s", urlstr, err.Error())
 		return
 	}
+
+	// TODO - finish once we're storing the header hash with the url
+	// if skipHashed && url.Hash != "" {
+	// 	// skip hashing if we have a valid base58-encided multihash.
+	// 	// some of our old, non-ipfs hashes used non-base58 encoded hashes
+	// 	// this'll have the effect of considering them stale dated, which
+	// 	// is what we we want.
+	// 	if _, err := multihash.Decode(base58.Decode(url.Hash)); err == nil {
+	// 		return
+	// 	}
+	// }
+
+	buf := &bytes.Buffer{}
+	if err = url.WarcRequest().Write(buf); err != nil {
+		return
+	}
+
+	header := buf.Bytes()
 
 	headerHash, err = WriteToIpfs(ipfsApiUrl, filepath.Base(urlstr), header)
 	if err != nil {
@@ -42,50 +65,9 @@ func ArchiveUrl(ipfsApiUrl string, url *archive.Url) (headerHash, bodyHash strin
 	// set hash for collection
 	url.Hash = bodyHash
 
-	return
-}
-
-// GetUrl grabs a url, return
-// currently a big 'ol work in progress, and will probably be moved into it's own
-// package. for now the request bytes aren't to be trusted
-func GetUrlBytes(urlstr string) (request, response []byte, err error) {
-	req := &warc.Request{
-		WARCRecordId:  uuid.New(),
-		WARCDate:      time.Now(),
-		ContentLength: 0,
-		WARCTargetURI: urlstr,
-	}
-
-	buf := bytes.NewBuffer(nil)
-	req.Write(buf)
-	request = buf.Bytes()
-
-	cli := http.Client{
-		Timeout: time.Second * 20,
-	}
-
-	res, err := cli.Get(urlstr)
-	if err != nil {
+	if err = url.Save(store); err != nil {
 		return
 	}
-	// close immideately, next steps could take a while
-	defer res.Body.Close()
-
-	response, err = ioutil.ReadAll(res.Body)
-	if err != nil {
-		return
-	}
-	if len(response) == 0 {
-		err = fmt.Errorf("Empty Response")
-	}
-
-	// TODO - generate response as a WARC record
-	// resrec := &warc.Response{
-	// 	WARCRecordId:  uuid.New(),
-	// 	WARCDate:      time.Now(),
-	// 	ContentLength: len(response),
-	// 	ContentType:   res.Header.Get("Content-Type"),
-	// }
 
 	return
 }
@@ -146,4 +128,13 @@ func WriteToIpfs(ipfsurl, filename string, data []byte) (hash string, err error)
 	}
 
 	return reply.Hash, nil
+}
+
+func ReadFile(ipfsUrl, hash string) (io.ReadCloser, error) {
+	res, err := http.Get(fmt.Sprintf("%s/cat?arg=%s", ipfsUrl, hash))
+	if err != nil {
+		return nil, err
+	}
+
+	return res.Body, nil
 }

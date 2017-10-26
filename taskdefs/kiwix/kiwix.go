@@ -3,8 +3,8 @@ package kiwix
 import (
 	"fmt"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/source"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/source"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 )
 

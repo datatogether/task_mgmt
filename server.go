@@ -1,5 +1,5 @@
 // Task Management manages tasks, including tracking the state of tasks as they move through a queue
-// As tasks are completed task-mgmt updates records of when tasks started, stopped, etc.
+// As tasks are completed task_mgmt updates records of when tasks started, stopped, etc.
 package main
 
 import (
@@ -7,29 +7,21 @@ import (
 	"fmt"
 	"github.com/datatogether/sql_datastore"
 	"github.com/datatogether/sqlutil"
-	"github.com/datatogether/task-mgmt/source"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/source"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/sirupsen/logrus"
 	"net/http"
 	"os"
-	"time"
 )
 
 var (
 	// cfg is the global configuration for the server. It's read in at startup from
 	// the config.json file and enviornment variables, see config.go for more info.
 	cfg *config
-
-	// When was the last alert sent out?
-	// Use this value to avoid bombing alerts
-	lastAlertSent *time.Time
-
 	// log output
 	log = logrus.New()
-
 	// application database connection
 	appDB = &sql.DB{}
-
 	// hoist default store
 	store = sql_datastore.DefaultStore
 )
@@ -68,7 +60,7 @@ func main() {
 	// printConfigInfo()
 
 	// fire it up!
-	log.Info("starting server on port", cfg.Port)
+	log.Infoln("starting server on port", cfg.Port)
 
 	// start server wrapped in a log.Fatal b/c http.ListenAndServe will not
 	// return unless there's an error
@@ -86,6 +78,7 @@ func NewServerRoutes() *http.ServeMux {
 	m := http.NewServeMux()
 	m.HandleFunc("/.well-known/acme-challenge/", CertbotHandler)
 	m.Handle("/", middleware(NotFoundHandler))
+	m.Handle("/healthcheck", middleware(HealthCheckHandler))
 
 	m.Handle("/tasks", middleware(TasksHandler))
 	m.Handle("/tasks/", middleware(TaskHandler))

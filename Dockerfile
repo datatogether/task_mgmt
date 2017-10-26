@@ -7,14 +7,12 @@ EXPOSE 3000
 # RUN go-wrapper install github.com/codegangsta/gin
 
 # Copy the local package files to the container’s workspace.
-ADD . /go/src/github.com/datatogether/task-mgmt
-# WORKDIR /go/src/github.com/datatogether/task-mgmt
-# CMD ["gin", "-i"]
+ADD . /go/src/github.com/datatogether/task_mgmt
 
 # Install api binary globally within container 
-RUN go install github.com/datatogether/task-mgmt
+RUN go install github.com/datatogether/task_mgmt
 # Set binary as entrypoint
-ENTRYPOINT /go/bin/task-mgmt
+ENTRYPOINT /go/bin/task_mgmt
 
 
 

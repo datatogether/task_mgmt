@@ -2,9 +2,11 @@ package main
 
 import (
 	"fmt"
-	"github.com/datatogether/task-mgmt/taskdefs/ipfs"
-	"github.com/datatogether/task-mgmt/taskdefs/kiwix"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/taskdefs/ipfs"
+	"github.com/datatogether/task_mgmt/taskdefs/kiwix"
+	"github.com/datatogether/task_mgmt/taskdefs/pod"
+	"github.com/datatogether/task_mgmt/taskdefs/sciencebase"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/streadway/amqp"
 	"time"
 )
@@ -13,20 +15,25 @@ func configureTasks() {
 	tasks.RegisterTaskdef("ipfs.addurl", ipfs.NewTaskAdd)
 	tasks.RegisterTaskdef("ipfs.addcollection", ipfs.NewAddCollection)
 	tasks.RegisterTaskdef("kiwix.updateSources", kiwix.NewTaskUpdateSources)
+	tasks.RegisterTaskdef("pod.addcatalog", pod.NewAddCatalog)
+	tasks.RegisterTaskdef("sb.addCatalogTree", sciencebase.NewAddCatalogTree)
 
 	// Must set api server url to make ipfs tasks work
 	ipfs.IpfsApiServerUrl = cfg.IpfsApiUrl
+	pod.IpfsApiServerUrl = cfg.IpfsApiUrl
+	sciencebase.IpfsApiServerUrl = cfg.IpfsApiUrl
 }
 
 // start accepting tasks from the queue, if setup doesn't error,
 // it returns a stop channel writing to stop will teardown the
 // func and stop accepting tasks
 func acceptTasks() (stop chan bool, err error) {
+	stop = make(chan bool)
 	if cfg.AmqpUrl == "" {
-		return nil, fmt.Errorf("no amqp url specified")
+		log.Infoln("no amqp url specified, queue listening disabled")
+		return stop, nil
 	}
 
-	stop = make(chan bool)
 	log.Printf("connecting to: %s", cfg.AmqpUrl)
 
 	var conn *amqp.Connection
@@ -86,7 +93,6 @@ func acceptTasks() (stop chan bool, err error) {
 			}
 
 			tc := make(chan *tasks.Task, 10)
-
 			// accept tasks
 			go func() {
 				for t := range tc {

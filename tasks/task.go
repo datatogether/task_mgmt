@@ -192,7 +192,7 @@ func (task *Task) Do(store datastore.Datastore, tc chan *Task) error {
 	for p := range pc {
 		// TODO - log progress and pipe out of this func
 		// so others can listen in for updates
-		// log.Printf("")
+		// fmt.Println(p.String())
 		task.Progress = &p
 		tc <- task
 

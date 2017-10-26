@@ -1,14 +1,18 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/datatogether/api/apiutil"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"io"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func TasksHandler(w http.ResponseWriter, r *http.Request) {
+	log.Infoln("tasks req:", r.Method, r.URL.Path)
 	switch r.Method {
 	case "POST":
 		EnqueueTaskHandler(w, r)
@@ -20,12 +24,42 @@ func TasksHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func EnqueueTaskHandler(w http.ResponseWriter, r *http.Request) {
-	t := &tasks.Task{
-		Type: "ipfs.add",
-		Params: map[string]interface{}{
-			"url":              r.FormValue("url"),
-			"ipfsApiServerUrl": cfg.IpfsApiUrl,
-		},
+	t := &tasks.Task{}
+	if err := json.NewDecoder(r.Body).Decode(t); err != nil {
+		log.Infoln(err)
+		apiutil.WriteErrResponse(w, http.StatusBadRequest, err)
+		return
+	}
+
+	// perform the task raw if no amqp url is specified
+	if cfg.AmqpUrl == "" {
+		now := time.Now()
+		t.Enqueued = &now
+		if err := t.Save(store); err != nil {
+			apiutil.WriteErrResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		task := tasks.Task{Id: t.Id}
+		if err := task.Read(store); err != nil {
+			apiutil.WriteErrResponse(w, http.StatusInternalServerError, err)
+			return
+		}
+
+		go func() {
+			tc := make(chan *tasks.Task, 10)
+			go func() {
+				if err := task.Do(store, tc); err != nil {
+					log.Println(err.Error())
+				}
+			}()
+			for t := range tc {
+				fmt.Println(t.Progress.String())
+			}
+		}()
+
+		apiutil.WriteMessageResponse(w, "task is running", nil)
+		return
 	}
 
 	if err := t.Enqueue(store, cfg.AmqpUrl); err != nil {

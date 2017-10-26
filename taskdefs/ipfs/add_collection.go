@@ -3,13 +3,12 @@ package ipfs
 import (
 	"bytes"
 	"fmt"
-	"github.com/datatogether/archive"
 	"github.com/datatogether/cdxj"
+	"github.com/datatogether/core"
 	"github.com/datatogether/sql_datastore"
-	"github.com/datatogether/task-mgmt/tasks"
+	"github.com/datatogether/task_mgmt/tasks"
 	"github.com/ipfs/go-datastore"
 	"path/filepath"
-	"time"
 )
 
 const pageSize = 100
@@ -37,9 +36,9 @@ func (t *AddCollection) SetDatastore(store datastore.Datastore) {
 		// if we're passed an sql datastore
 		// make sure our collection model is registered
 		sqlds.Register(
-			&archive.Url{},
-			&archive.Collection{},
-			&archive.CollectionItem{},
+			&core.Url{},
+			&core.Collection{},
+			&core.CollectionItem{},
 		)
 	}
 
@@ -61,7 +60,7 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 	// 1. Get the Collection & Item Count
 	pch <- p
 
-	collection := &archive.Collection{Id: t.CollectionId}
+	collection := &core.Collection{Id: t.CollectionId}
 	if err := collection.Read(t.store); err != nil {
 		p.Error = fmt.Errorf("Error reading collection: %s", err.Error())
 		pch <- p
@@ -100,8 +99,8 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 			pch <- p
 
 			// TODO - get the actual start time from header WARC Record
-			start := time.Now()
-			headerHash, bodyHash, err := ArchiveUrl(t.ipfsApiServerUrl, &item.Url)
+			// start := time.Now()
+			headerHash, bodyHash, err := ArchiveUrl(t.store, t.ipfsApiServerUrl, &item.Url)
 			if err != nil {
 				p.Error = err
 				pch <- p
@@ -111,7 +110,7 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 			// TODO - demo content for now, this is going to need lots of refinement
 			indexRec := &cdxj.Record{
 				Uri:        urlstr,
-				Timestamp:  start,
+				Timestamp:  *item.LastGet,
 				RecordType: "", // TODO set record type?
 				JSON: map[string]interface{}{
 					"locator": fmt.Sprintf("urn:ipfs/%s/%s", headerHash, bodyHash),
@@ -119,16 +118,16 @@ func (t *AddCollection) Do(pch chan tasks.Progress) {
 			}
 
 			if err := index.Write(indexRec); err != nil {
-				p.Error = fmt.Errorf("Error writing %s body to ipfs: %s", filepath.Base(urlstr), err.Error())
+				p.Error = fmt.Errorf("Error writing %s index record to ipfs: %s", filepath.Base(urlstr), err.Error())
 				pch <- p
 				return
 			}
 
-			if err := item.Save(t.store); err != nil {
-				p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
-				pch <- p
-				return
-			}
+			// if err := item.Save(t.store); err != nil {
+			// 	p.Error = fmt.Errorf("Error saving item: %s: %s", item.Id, err.Error())
+			// 	pch <- p
+			// 	return
+			// }
 		}
 	}
 

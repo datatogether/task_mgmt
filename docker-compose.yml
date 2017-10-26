@@ -1,9 +1,9 @@
 version: '2'
 services:
-  task-mgmt:
+  task_mgmt:
     build: .
     volumes:
-      - .:/go/src/github.com/datatogether/task-mgmt
+      - .:/go/src/github.com/datatogether/task_mgmt
       - ./sql:/sql
     ports:
      - 8080:8080
