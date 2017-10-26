@@ -53,8 +53,4 @@ https://localhost:5001/webui
 
 ## Development
 
-[Step-by-step instructions about how to set up a local dev environment and any dependencies]
-
-## Deployment
-
-[Optional section with deployment instructions]
+Coming soon!
