@@ -5,7 +5,7 @@
 [![License](https://img.shields.io/github/license/mashape/apistatus.svg)](./LICENSE) 
 [![Codecov](https://img.shields.io/codecov/c/github/datatogether/task_mgmt.svg?style=flat-square)](https://codecov.io/gh/datatogether/task_mgmt)
 
-The task_mgmt service does just what it says on the tin. It's main job is to manage tasks, & the state of tasks as they move through the queue, questions like "what tasks are currently running?". As tasks are completed task_mgmt updates records of when tasks started, finished, or failed.
+The task_mgmt is a service for managing & executing archiving tasks. All task definitions are in the `taskdefs`, directory. task_mgmt manages the state of tasks as they move through the queue, questions like "what tasks are currently running?". As tasks are completed task_mgmt updates records of when tasks started, finished, or failed.
 
 ## License & Copyright
 
