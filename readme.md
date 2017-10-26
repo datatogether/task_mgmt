@@ -1,14 +1,52 @@
-# Sentry
-### It watches stuff
+# Task Management
 
-Sentry is a parallelized web crawler written in [Go](https://golang.org) that writes urls, links, & response headers to a Postgres database, then stores the response itself on amazon S3. It keeps a list of “sources”, which use simple string comparison to keep it from wandering outside of designated domains or url paths.
+[![GitHub](https://img.shields.io/badge/project-Data_Together-487b57.svg?style=flat-square)](http://github.com/datatogether)
+[![Slack](https://img.shields.io/badge/slack-Archivers-b44e88.svg?style=flat-square)](https://archivers-slack.herokuapp.com/)
+[![License](https://img.shields.io/github/license/mashape/apistatus.svg)](./LICENSE) 
+[![Codecov](https://img.shields.io/codecov/c/github/datatogether/task_mgmt.svg?style=flat-square)](https://codecov.io/gh/datatogether/task_mgmt)
 
-The big difference from other crawlers is a tunable “stale duration”, which will tell the crawler to capture an updated snapshot of the page if the time since the last GET request is older than the stale duration. This gives it a continual “watching” property.
+The task_mgmt service does just what it says on the tin. It's main job is to manage tasks, & the state of tasks as they move through the queue, questions like "what tasks are currently running?". As tasks are completed task_mgmt updates records of when tasks started, finished, or failed.
 
-Sentry holds a separate stream of scraping for any url that looks like a dataset. So when it encounters urls that look like `https://foo.com/file.csv`, it assumes that file ending may be a static asset, and places that url on a separate thread for archiving.
+## License & Copyright
 
-# Related Projects
+[Modelled on [project guidelines template](https://github.com/datatogether/roadmap/blob/master/PROJECT.md#license--copyright-readme-block) ]
 
-In parallel to building this tool, we have engaged in efforts to map the landscape of similar projects:
+## Getting Involved
 
-:eyes: See: [**Comparison of web archiving software**](https://github.com/datatogether/research/tree/master/web_archiving)
+We would love involvement from more people! If you notice any errors or would like to submit changes, please see our [Contributing Guidelines](./.github/CONTRIBUTING.md). 
+
+We use GitHub issues for [tracking bugs and feature requests](https://github.com/datatogether/REPONAME/issues) and Pull Requests (PRs) for [submitting changes](https://github.com/datatogether/REPONAME/pulls)
+
+## Usage
+
+If you have docker & [docker-compose](https://docs.docker.com/compose/install/), clone this repo & run the following:
+```shell
+  # first, cd into the project directory, then run
+  docker-compose up
+
+  # this should respond with json, having an empty "data" array
+  http://localhost:8080/tasks
+
+  # this should respond with json, with meta.message : "task successfully enqueud"
+  http://localhost:8080/ipfs/add?url=https://i.redd.it/5kwih5n5i58z.jpg
+
+  # requesting this again should now show a task in the data array, including a "succeeded" timestamp:
+  http://localhost:8080/tasks
+
+  # congrats, you've put this url of a jpeg on ipfs: https://i.redd.it/5kwih5n5i58z.jpg
+  # view it here:
+  https://ipfs.io/ipfs/QmeDchVWNVxFcEvnbtBbio88UwrHSCqEAXpcj2gX3aufvv
+
+  # connect to your ipfs server here:
+  # click the "files" tab, and you'll see this hash: QmeDchVWNVxFcEvnbtBbio88UwrHSCqEAXpcj2gX3aufvv
+  # this means you have a local ipfs node serving the image we just processed
+  https://localhost:5001/webui
+```
+
+## Development
+
+[Step-by-step instructions about how to set up a local dev environment and any dependencies]
+
+## Deployment
+
+[Optional section with deployment instructions]
