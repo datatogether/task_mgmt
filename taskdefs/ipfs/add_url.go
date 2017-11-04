@@ -53,7 +53,7 @@ func (t *TaskAdd) Do(pch chan tasks.Progress) {
 		Url: t.Url,
 	}
 
-	if err := u.Read(t.store); err != nil && err != core.ErrNotFound {
+	if err := u.Read(t.store); err != nil && err != datastore.ErrNotFound {
 		p.Error = fmt.Errorf("Error reading url: %s", err.Error())
 		pch <- p
 		return

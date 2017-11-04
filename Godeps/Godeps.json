@@ -148,7 +148,7 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/api/apiutil",
-			"Rev": "ab14ad16a50a1b05e37c16f71c516ed8c6d4eefc"
+			"Rev": "ead043fb9178cfa37825a0cd8f0c2527c5b6db2c"
 		},
 		{
 			"ImportPath": "github.com/datatogether/cdxj",
@@ -160,11 +160,11 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/core",
-			"Rev": "12765f1ecc79bbc36700b57ebc9047044cab6e15"
+			"Rev": "8cd5c86c5f1a940686275f7135f72d8551017c83"
 		},
 		{
 			"ImportPath": "github.com/datatogether/ffi",
-			"Rev": "d8bb8e6dafdcca782940d05398538b1c563be41d"
+			"Rev": "ef6e222414f133368de3341f4c46571d4f9b9a5c"
 		},
 		{
 			"ImportPath": "github.com/datatogether/linked_data",
@@ -180,7 +180,7 @@
 		},
 		{
 			"ImportPath": "github.com/datatogether/sql_datastore",
-			"Rev": "c9059bb90d160e3ccd6b04e08d3b60c1971d89e6"
+			"Rev": "e90e848e5f78683ce0c48f59d0c8c82a15ad663d"
 		},
 		{
 			"ImportPath": "github.com/datatogether/sqlutil",
@@ -212,11 +212,11 @@
 		},
 		{
 			"ImportPath": "github.com/ipfs/go-datastore",
-			"Rev": "e8521f97048a5b92f2dfd74b413928cb7d7cce1c"
+			"Rev": "75b843d2cf6837690ebb79e725ef0ce588e217e8"
 		},
 		{
 			"ImportPath": "github.com/ipfs/go-datastore/query",
-			"Rev": "e8521f97048a5b92f2dfd74b413928cb7d7cce1c"
+			"Rev": "75b843d2cf6837690ebb79e725ef0ce588e217e8"
 		},
 		{
 			"ImportPath": "github.com/jbenet/go-base58",

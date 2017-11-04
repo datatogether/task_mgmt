@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/ipfs/go-datastore"
 	"github.com/pborman/uuid"
 	"net/http"
 	"net/url"
@@ -84,14 +85,14 @@ func (r *Repo) FetchLatestCommit() (string, error) {
 
 func (r *Repo) Read(db sqlQueryable) error {
 	if r.Id == "" {
-		return ErrNotFound
+		return datastore.ErrNotFound
 	}
 	return r.UnmarshalSQL(db.QueryRow(qRepoReadById, r.Id))
 }
 
 func (r *Repo) Save(db sqlQueryExecable) error {
 	prev := &Repo{Id: r.Id}
-	if err := prev.Read(db); err == ErrNotFound {
+	if err := prev.Read(db); err == datastore.ErrNotFound {
 		r.Id = uuid.New()
 		r.Created = time.Now().Round(time.Millisecond).In(time.UTC)
 		r.Updated = r.Created
@@ -122,7 +123,7 @@ func (t *Repo) UnmarshalSQL(row sqlScannable) error {
 	err := row.Scan(&id, &created, &updated, &url, &branch, &commit)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return ErrNotFound
+			return datastore.ErrNotFound
 		}
 		return err
 	}

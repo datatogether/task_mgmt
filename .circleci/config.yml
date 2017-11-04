@@ -35,7 +35,10 @@ jobs:
           command: go-wrapper download && go-wrapper install && go get -v github.com/jstemmer/go-junit-report
       - run: 
           name: Run tests
-          command: go test -v -race -coverprofile=coverage.txt -covermode=atomic | tee /tmp/test-reports/datatogether/original.txt ; test ${PIPESTATUS[0]} -eq 0
+          command: go test -v -race | tee /tmp/test-reports/datatogether/original.txt ; test ${PIPESTATUS[0]} -eq 0
+      - run:
+          name: Coverage tests
+          command: ./.circleci/cover.test.sh
       - run: 
           name: Convert test output to junit-style xml
           command: cat /tmp/test-reports/datatogether/original.txt | go-junit-report > /tmp/test-reports/datatogether/junit.xml

@@ -1,6 +1,7 @@
 package datastore
 
 import (
+	"errors"
 	"path"
 	"strings"
 
@@ -237,6 +238,23 @@ func (k Key) IsTopLevel() bool {
 //   NewKey("/f98719ea086343f7b71f32ea9d9d521d")
 func RandomKey() Key {
 	return NewKey(strings.Replace(uuid.NewV4().String(), "-", "", -1))
+}
+
+// MarshalJSON implements the json.Marshaler interface,
+// keys are represented as JSON strings
+func (k Key) MarshalJSON() ([]byte, error) {
+	return []byte(`"` + k.String() + `"`), nil
+}
+
+// MarshalJSON implements the json.Unmarshaler interface,
+// keys will parse any value specified as a key to a string
+func (k *Key) UnmarshalJSON(data []byte) error {
+	if len(data) < 2 {
+		k.Clean()
+		return errors.New("too short to unmarshal key to json string")
+	}
+	*k = NewKey(string(data[1 : len(data)-1]))
+	return nil
 }
 
 /*
