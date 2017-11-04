@@ -18,9 +18,10 @@ import (
 const collectionInfoFilename = "collection.json"
 const urlsFilename = "urls.txt"
 
-// CollectionFromGist injests a a collection to IPFS,
-// it iterates through each setting hashes on collection urls
-// and, eventually, generates a cdxj index of the archive
+// CollectionFromGist creates a collection from a gist of urls
+// the gist requires a file called urls.txt be defined, and be
+// one-url-per-line. an optional collection.json sets
+// the title, description, and url properties of the collection
 type CollectionFromGist struct {
 	// title for collection if no collection present
 	GistUrl string `json:"gistUrl"`
@@ -84,6 +85,8 @@ func (t *CollectionFromGist) Do(pch chan tasks.Progress) {
 	return
 }
 
+// GistIdFromUrl extracts the url from a string that is either
+// a url to the gist, or a raw id.
 func GistIdFromUrl(rawurl string) (string, error) {
 	if len(rawurl) == 32 && !strings.HasPrefix(rawurl, "http") {
 		return rawurl, nil
@@ -100,6 +103,7 @@ func GistIdFromUrl(rawurl string) (string, error) {
 	return id, nil
 }
 
+// CollectionFromGistId creates a core.Collection from a gist
 func CollectionFromGistId(store datastore.Datastore, gistid, creatorId string) (*core.Collection, error) {
 	col := &core.Collection{Creator: creatorId}
 	res, err := http.Get(fmt.Sprintf("https://api.github.com/gists/%s", gistid))
@@ -179,6 +183,8 @@ func CollectionFromGistId(store datastore.Datastore, gistid, creatorId string) (
 	return nil, fmt.Errorf("gist doesn't have a %s file", urlsFilename)
 }
 
+// EnsureCollection makes sure a collection exists, and if it doesn't creates one
+// TODO - this is a candidate for moving into the core package
 func EnsureCollection(store datastore.Datastore, col *core.Collection) error {
 	title := col.Title
 	description := col.Description
