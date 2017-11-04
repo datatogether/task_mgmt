@@ -93,11 +93,11 @@ func (t *AddCatalogTree) Do(pch chan tasks.Progress) {
 	pch <- p
 
 	collection := &core.Collection{Url: t.Url}
-	if err := collection.Read(t.store); err != nil && err != core.ErrNotFound {
+	if err := collection.Read(t.store); err != nil && err != datastore.ErrNotFound {
 		p.Error = fmt.Errorf("Error reading collection: %s", err.Error())
 		pch <- p
 		return
-	} else if err == core.ErrNotFound {
+	} else if err == datastore.ErrNotFound {
 		collection.Title = t.CollectionTitle
 		if err = collection.Save(t.store); err != nil {
 			p.Error = fmt.Errorf("Error saving colleciton: %s", err.Error())
